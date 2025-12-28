@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5S Lean Simulation Game - Theory Aligned</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --bg: #f8fafc;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+            padding-bottom: 60px;
+        }
+
+        /* Header & Dashboard */
+        header {
+            width: 100%;
+            background: var(--card);
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            z-index: 20;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .brand span { color: var(--accent); }
+
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .metric {
+            background: var(--bg);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .metric span { color: var(--accent); font-size: 1.1rem; }
+
+        /* Game Container */
+        #game-container {
+            position: relative;
+            margin-top: 20px;
+            width: 95%;
+            max-width: 1000px;
+            aspect-ratio: 16/9;
+            background: var(--card);
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Sfondo Quadranti (Visibile solo in R3 e R4) */
+        #quadrant-lines {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .vline { position: absolute; top: 0; bottom: 0; width: 2px; background: #cbd5e1; }
+        .hline { position: absolute; left: 0; right: 0; height: 2px; background: #cbd5e1; }
+        
+        /* The Numbers */
+        .number {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Courier New', monospace; 
+            transition: all 0.5s ease; 
+            user-select: none;
+            border-radius: 4px;
+            width: 30px; 
+            height: 30px;
+            z-index: 10;
+        }
+
+        .number:hover {
+            z-index: 100;
+            outline: 2px solid var(--accent);
+        }
+
+        .number.clicked {
+            opacity: 0;
+            transform: scale(0);
+            pointer-events: none;
+        }
+
+        /* Colori 5S (Seiton/Seiketsu) */
+        .color-1 { color: #dc2626; border: 1px solid #fecaca; background: #fef2f2; }
+        .color-2 { color: #d97706; border: 1px solid #fde68a; background: #fffbeb; }
+        .color-3 { color: #16a34a; border: 1px solid #bbf7d0; background: #f0fdf4; }
+        .color-4 { color: #2563eb; border: 1px solid #bfdbfe; background: #eff6ff; }
+        .color-5 { color: #9333ea; border: 1px solid #e9d5ff; background: #faf5ff; }
+
+        /* Stile specifico per Fase 4 (Seiton - Visual Management) */
+        /* Aggiungiamo un effetto "etichetta" più marcato per distinguere dall'effetto piatto della fase 5 */
+        .visual-management {
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            border-width: 2px !important;
+        }
+
+        /* Stile Grid Mode (Round 5 - Standardize) */
+        .grid-mode {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 8px;
+            padding: 20px;
+        }
+        .grid-mode .number {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            transform: none !important;
+            width: 100%;
+            height: 100%;
+            font-size: 1.4rem !important; /* DIMENSIONE STANDARDIZZATA */
+            border-width: 1px;
+            box-shadow: none; /* Flat design per indicare pulizia estrema */
+        }
+
+        /* Feedback Visivo */
+        .error-flash { animation: flashRed 0.3s ease-in-out; }
+        @keyframes flashRed {
+            0% { background-color: white; }
+            50% { background-color: #fecaca; }
+            100% { background-color: white; }
+        }
+
+        /* Modal Overlay */
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            backdrop-filter: blur(5px);
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .modal {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            color: #000000;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 { margin-top: 0; color: #1e293b; font-size: 1.8rem; margin-bottom: 10px; }
+        p.desc { color: #334155; line-height: 1.5; margin-bottom: 20px; font-size: 1rem; }
+
+        .info-box {
+            text-align: left; background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.95rem; border: 1px solid #e2e8f0; color: #333; width: 100%; box-sizing: border-box;
+        }
+
+        .btn {
+            background: var(--accent); color: white; border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); margin-top: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none;
+        }
+        .btn:hover { background: #1d4ed8; transform: translateY(-2px); }
+        .btn-outline { background: transparent; border: 2px solid var(--accent); color: var(--accent); box-shadow: none; }
+        .btn-outline:hover { background: #eff6ff; }
+        
+        .share-container { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; width: 100%; }
+        .share-icons { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .share-btn { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 1.2rem; transition: transform 0.2s; border: none; cursor: pointer; }
+        .share-btn:hover { transform: scale(1.1); }
+        .bg-wa { background: #25D366; } .bg-tg { background: #0088cc; } .bg-mail { background: #ea4335; }
+
+        /* Chart */
+        .chart-container { display: flex; align-items: flex-end; justify-content: center; height: 200px; gap: 15px; margin: 20px 0; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; width: 100%; }
+        .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 60px; }
+        .bar { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; transition: height 1s ease-out; min-height: 4px; }
+        .bar-label { margin-top: 8px; font-size: 0.75rem; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        .bar-value { margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; }
+
+        /* DEBUG BAR */
+        #debug-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #1e293b;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            z-index: 9999;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            flex-wrap: wrap;
+        }
+        .debug-label { color: #94a3b8; font-weight: bold; font-size: 0.8rem; margin-right: 5px; display: flex; align-items: center; gap: 5px;}
+        .debug-btn {
+            background: #334155;
+            color: #f1f5f9;
+            border: 1px solid #475569;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .debug-btn:hover { background: #475569; border-color: #64748b; }
+        .debug-btn.primary { background: #0f766e; border-color: #115e59; color: white; font-weight: bold;}
+        .debug-btn.primary:hover { background: #115e59; }
+
+        @media (max-width: 600px) {
+            #game-container { aspect-ratio: 1/1; height: 60vh; }
+            .dashboard { display: none; }
+            #debug-bar { padding: 5px; }
+            .debug-btn { padding: 4px 8px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h18"/><path d="M9 15h18"/><path d="M15 9v18"/></svg>
+        5S Master Simulation
+    </div>
+    <div class="dashboard">
+        <div class="metric">Fase: <span id="round-disp">Intro</span></div>
+        <div class="metric">Target: <span id="target-disp">1</span></div>
+        <div class="metric">Tempo: <span id="time-disp">0.0s</span></div>
+    </div>
+</header>
+
+<div id="game-container">
+    <div id="quadrant-lines">
+        <div class="vline" style="left: 33.3%;"></div>
+        <div class="vline" style="left: 66.6%;"></div>
+        <div class="hline" style="top: 33.3%;"></div>
+        <div class="hline" style="top: 66.6%;"></div>
+    </div>
+    <div id="game-board"></div>
+    <div id="overlay">
+        <div class="modal" id="modal-content">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- BARRA DEBUG / NAVIGAZIONE RAPIDA -->
+<div id="debug-bar">
+    <span class="debug-label">🛠️ ADMIN:</span>
+    <button class="debug-btn primary" onclick="forceEndRound()">⏩ Vinci Round</button>
+    <span style="color:#475569">|</span>
+    <button class="debug-btn" onclick="jumpToRound(1)">Fase 1</button>
+    <button class="debug-btn" onclick="jumpToRound(2)">Fase 2</button>
+    <button class="debug-btn" onclick="jumpToRound(3)">Fase 3</button>
+    <button class="debug-btn" onclick="jumpToRound(4)">Fase 4</button>
+    <button class="debug-btn" onclick="jumpToRound(5)">Fase 5</button>
+    <button class="debug-btn" onclick="showFinalResults()">Risultati</button>
+</div>
+
+<script>
+    // --- CONFIGURAZIONE ---
+    const TOTAL_TARGET = 49;
+    const DISTRACTIONS = 30; 
+    const MAX_ROTATION = 180;
+    
+    // --- STATO ---
+    const state = {
+        playerName: '',
+        round: 0,
+        currentNumber: 1,
+        startTime: 0,
+        timerInterval: null,
+        chaosPositions: [],    
+        quadrantPositions: [], 
+        chaosStyles: [],       
+        results: [0, 0, 0, 0, 0] 
+    };
+
+    const els = {
+        board: document.getElementById('game-board'),
+        overlay: document.getElementById('overlay'),
+        modal: document.getElementById('modal-content'),
+        round: document.getElementById('round-disp'),
+        target: document.getElementById('target-disp'),
+        time: document.getElementById('time-disp'),
+        container: document.getElementById('game-container'),
+        qLines: document.getElementById('quadrant-lines')
+    };
+
+    // --- GENERATORI DI POSIZIONI ---
+    function generateChaosPositions() {
+        state.chaosPositions = [];
+        state.chaosStyles = [];
+        const count = TOTAL_TARGET + DISTRACTIONS;
+        const placed = [];
+        const ITEM_W = 4.5; const ITEM_H = 8.5; 
+
+        for(let i=1; i<=count; i++) {
+            let pos = findFreePosition(placed, ITEM_W, ITEM_H, 0, 100, 0, 100);
+            state.chaosPositions.push({val: i, ...pos});
+            state.chaosStyles.push({
+                rot: Math.floor(Math.random() * MAX_ROTATION) - (MAX_ROTATION/2),
+                size: Math.floor(Math.random() * 12) + 14 
+            });
+            placed.push(pos);
+        }
+    }
+
+    function generateQuadrantPositions() {
+        state.quadrantPositions = [];
+        const ITEM_W = 4.5; const ITEM_H = 8.5; 
+        const quadrants = [
+            {l:0, t:0}, {l:33.3, t:0}, {l:66.6, t:0},
+            {l:0, t:33.3}, {l:33.3, t:33.3}, {l:66.6, t:33.3},
+            {l:0, t:66.6}, {l:33.3, t:66.6}, {l:66.6, t:66.6}
+        ];
+        const placedInSession = []; 
+
+        for(let i=1; i<=TOTAL_TARGET; i++) {
+            const qIndex = (i - 1) % 9;
+            const q = quadrants[qIndex];
+            let pos = findFreePosition(placedInSession, ITEM_W, ITEM_H, q.l + 1, q.l + 31, q.t + 1, q.t + 31);
+            state.quadrantPositions.push({val: i, ...pos});
+            placedInSession.push(pos);
+        }
+    }
+
+    function findFreePosition(placed, w, h, minX, maxX, minY, maxY) {
+        let attempts = 0;
+        let top=0, left=0;
+        let valid = false;
+        while(attempts < 150 && !valid) {
+            left = minX + Math.random() * (maxX - minX - w);
+            top = minY + Math.random() * (maxY - minY - h);
+            valid = true;
+            for (const p of placed) {
+                if (left < p.left + w && left + w > p.left &&
+                    top < p.top + h && top + h > p.top) {
+                    valid = false;
+                    break;
+                }
+            }
+            attempts++;
+        }
+        return {top, left};
+    }
+
+    // --- RENDERING ---
+    function setupBoard() {
+        els.board.innerHTML = '';
+        els.board.className = ''; 
+        els.qLines.style.display = 'none';
+
+        if (state.round === 5) {
+            els.board.classList.add('grid-mode');
+            for(let i=1; i<=TOTAL_TARGET; i++) {
+                // Round 5: Dimensione Standard (null -> CSS), Rotazione 0, Uniformità
+                createNumber(i, null, 0, null); 
+            }
+            return;
+        }
+
+        if (state.round === 3 || state.round === 4) {
+            els.qLines.style.display = 'block';
+            state.quadrantPositions.forEach(pos => {
+                const style = state.chaosStyles[pos.val - 1] || {rot:0, size:18}; 
+                // In R4, rotazione 0 ma MANTENIAMO size random per mostrare mancanza di standardizzazione
+                const rotation = (state.round === 3) ? style.rot : 0;
+                const fontSize = style.size; 
+                createNumber(pos.val, pos, rotation, fontSize);
+            });
+            return;
+        }
+
+        const limit = state.round === 1 ? (TOTAL_TARGET + DISTRACTIONS) : TOTAL_TARGET;
+        state.chaosPositions.forEach((pos, idx) => {
+            if (pos.val <= limit) {
+                const style = state.chaosStyles[idx];
+                createNumber(pos.val, pos, style.rot, style.size);
+            }
+        });
+    }
+
+    function createNumber(val, posData, rot, size) {
+        const div = document.createElement('div');
+        div.className = 'number';
+        div.textContent = val;
+        div.dataset.val = val;
+
+        if (state.round >= 4) {
+            const colorIdx = Math.ceil(val / 10); 
+            div.classList.add(`color-${Math.min(colorIdx, 5)}`);
+            // Add specific visual style for Seiton (Phase 4)
+            if(state.round === 4) div.classList.add('visual-management');
+        } else {
+            div.style.background = '#fff';
+            div.style.border = '1px solid #cbd5e1';
+            div.style.color = '#334155';
+        }
+
+        if (state.round === 5) {
+            // Grid mode (Standardized Size via CSS)
+        } else {
+            div.style.top = posData.top + '%';
+            div.style.left = posData.left + '%';
+            div.style.transform = `rotate(${rot}deg)`;
+            div.style.fontSize = size + 'px'; // Random size persists in Round 4!
+        }
+
+        div.onclick = () => handleNumberClick(val, div);
+        els.board.appendChild(div);
+    }
+
+    function handleNumberClick(val, element) {
+        if (val === state.currentNumber) {
+            element.classList.add('clicked');
+            state.currentNumber++;
+            els.target.textContent = state.currentNumber;
+            if (state.currentNumber > TOTAL_TARGET) endRound();
+        } else {
+            els.container.classList.add('error-flash');
+            setTimeout(() => els.container.classList.remove('error-flash'), 300);
+        }
+    }
+
+    // --- LOGICA GIOCO ---
+    function startRound(r) {
+        if ((r === 1 || r === 2) && state.chaosPositions.length === 0) generateChaosPositions();
+        if ((r === 3 || r === 4)) {
+            if (state.chaosStyles.length === 0) generateChaosPositions(); 
+            if (state.quadrantPositions.length === 0) generateQuadrantPositions();
+        }
+
+        const nameInput = document.getElementById('player-name');
+        if(r === 1 && nameInput && nameInput.value) state.playerName = nameInput.value;
+
+        state.round = r;
+        state.currentNumber = 1;
+        state.startTime = Date.now();
+        
+        els.overlay.style.display = 'none';
+        els.round.textContent = getRoundName(r);
+        els.target.textContent = 1;
+        
+        setupBoard();
+        
+        if(state.timerInterval) clearInterval(state.timerInterval);
+        state.timerInterval = setInterval(() => {
+            const d = (Date.now() - state.startTime) / 1000;
+            els.time.textContent = d.toFixed(1) + 's';
+        }, 100);
+    }
+
+    function endRound() {
+        clearInterval(state.timerInterval);
+        let time = (Date.now() - state.startTime) / 1000;
+        if (time < 0.5) time = Math.random() * 10 + 5; 
+        
+        state.results[state.round - 1] = time;
+        showIntermission();
+    }
+
+    function getRoundName(r) {
+        switch(r) {
+            case 1: return "1. Caos";
+            case 2: return "2. Seiri (Sort)";
+            case 3: return "3. Seiso (Ord. Geografico)";
+            case 4: return "4. Seiton (Visual Mng)";
+            case 5: return "5. Seiketsu (Standard)";
+            default: return "";
+        }
+    }
+
+    // --- DEBUG & NAVIGATION ---
+    function forceEndRound() {
+        if (state.round > 0 && state.round <= 5) {
+            endRound();
+        } else {
+            alert("Inizia prima un round!");
+        }
+    }
+
+    function jumpToRound(r) {
+        startRound(r);
+    }
+
+    // --- MODALS ---
+    function showIntro() {
+         els.modal.innerHTML = `
+            <h2>Simulazione 5S: Lean Production</h2>
+            <p class="desc">Benvenuti. Questa simulazione vi guiderà attraverso le 5 fasi della metodologia 5S per sperimentare l'impatto dell'organizzazione sull'efficienza.</p>
+            <div class="info-box">
+                <strong>Obiettivo:</strong> Cliccare i numeri da 1 a 49 in ordine strettamente sequenziale.<br><br>
+                <strong>KPI:</strong> Misureremo il tempo di esecuzione per ogni fase.
+            </div>
+            <input type="text" id="player-name" placeholder="Inserisci il tuo nome" style="padding: 12px; width: 80%; margin-bottom: 20px; border: 2px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+            <button class="btn" onclick="startRound(1)">Inizia Fase 1: Caos</button>
+        `;
+        els.overlay.style.display = 'flex';
+    }
+
+    function showIntermission() {
+        els.overlay.style.display = 'flex';
+        const r = state.round;
+        const time = state.results[r-1].toFixed(1);
+        
+        let title = "", desc = "", btn = "", action = "";
+
+        // TESTI AGGIORNATI SECONDO TEORIA
+        if (r === 1) {
+            title = "Fase 1 (Caos) Completata";
+            desc = `Tempo: <strong>${time}s</strong>.<br>Il posto di lavoro è pieno di sprechi (MUDA).<br>Prossimo: <strong>Seiri (Sort)</strong> - Eliminiamo ciò che non serve.`;
+            btn = "Avvia Fase 2 (Seiri)"; action = "startRound(2)";
+        } else if (r === 2) {
+            title = "Fase 2 (Seiri) Completata";
+            desc = `Tempo: <strong>${time}s</strong>.<br>Abbiamo rimosso il superfluo, ma regna ancora il disordine.<br>Prossimo: <strong>Seiso (Ordinare)</strong> - Definiamo le posizioni geografiche (Quadranti).`;
+            btn = "Avvia Fase 3 (Seiso)"; action = "startRound(3)";
+        } else if (r === 3) {
+            title = "Fase 3 (Seiso/Ordinare) Completata";
+            desc = `Tempo: <strong>${time}s</strong>.<br>Le zone sono definite, ma la ricerca è lenta per mancanza di aiuti visivi.<br>Prossimo: <strong>Seiton (Visual Management)</strong> - Usiamo colori e orientamento per facilitare la ricerca. Nota: La variabilità degli strumenti (dimensioni diverse) persiste ancora!`;
+            btn = "Avvia Fase 4 (Seiton)"; action = "startRound(4)";
+        } else if (r === 4) {
+            title = "Fase 4 (Seiton/Visual) Completata";
+            desc = `Tempo: <strong>${time}s</strong>.<br>Ottimo miglioramento visivo. Ma noti come le diverse dimensioni (variabilità) rallentino ancora l'occhio?<br>Prossimo: <strong>Seiketsu (Standardizzare)</strong> - Rendiamo tutto uniforme: stessa dimensione, stessa griglia. Eliminiamo la variabilità.`;
+            btn = "Avvia Fase 5 (Standardize)"; action = "startRound(5)";
+        } else {
+            showFinalResults();
+            return;
+        }
+
+        els.modal.innerHTML = `<h2>${title}</h2><p class="desc">${desc}</p><button class="btn" onclick="${action}">${btn}</button>`;
+    }
+
+    function showFinalResults() {
+        els.overlay.style.display = 'flex';
+        const times = state.results;
+        if (times[0] === 0) times[0] = 60; 
+
+        const improvement = (((times[0] - times[4]) / times[0]) * 100).toFixed(0);
+        const name = state.playerName || "Player";
+
+        const shareText = `🚀 Ho completato la 5S Lean Simulation!\n📉 Caos: ${times[0].toFixed(1)}s\n📈 Standard: ${times[4].toFixed(1)}s\n⚡ Efficienza: +${improvement}%\n\n#LeanManufacturing #5S`;
+        const encodedText = encodeURIComponent(shareText);
+
+        let barsHtml = '';
+        const labels = ["Caos", "Seiri", "Seiso", "Seiton", "Std"];
+        const max = Math.max(...times) || 1;
+
+        times.forEach((t, i) => {
+            const h = (t / max) * 100;
+            const color = i === 4 ? '#16a34a' : (i===0 ? '#94a3b8' : '#3b82f6');
+            barsHtml += `<div class="bar-group"><div class="bar-value">${t.toFixed(1)}s</div><div class="bar" style="height: ${h}%; background: ${color};"></div><div class="bar-label">${labels[i]}</div></div>`;
+        });
+
+        els.modal.innerHTML = `
+            <h2>Risultati Finali</h2>
+            <div class="chart-container">${barsHtml}</div>
+            <div style="background: #f0fdf4; color: #166534; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem;">
+                Miglioramento efficienza: <strong>${isNaN(improvement) ? 'N/A' : '+' + improvement + '%'}</strong>
+            </div>
+
+            <div class="share-container">
+                <p style="margin:0; font-size:0.9rem; color:#64748b;">Condividi il risultato:</p>
+                <div class="share-icons">
+                    <button class="btn" onclick="shareNative('${name}', '${improvement}', ${times[0]}, ${times[4]})" style="padding: 10px 20px; font-size: 1rem;">📤 Condividi</button>
+                    <a href="https://wa.me/?text=${encodedText}" target="_blank" class="share-btn bg-wa" title="WhatsApp">W</a>
+                    <a href="https://t.me/share/url?url=&text=${encodedText}" target="_blank" class="share-btn bg-tg" title="Telegram">T</a>
+                    <a href="mailto:?subject=Risultato 5S Game&body=${encodedText}" target="_blank" class="share-btn bg-mail" title="Email">✉️</a>
+                </div>
+            </div>
+
+            <button class="btn btn-outline" onclick="location.reload()" style="margin-top:20px;">Ricomincia</button>
+        `;
+    }
+
+    async function shareNative(name, imp, tStart, tEnd) {
+        const text = `🚀 Ho completato la 5S Lean Simulation!\n📉 Caos: ${tStart.toFixed(1)}s\n📈 Standard: ${tEnd.toFixed(1)}s\n⚡ Efficienza: +${imp}%`;
+        if (navigator.share) {
+            try { await navigator.share({ title: 'Risultato 5S Game', text: text, url: window.location.href }); } catch (err) {}
+        } else {
+            navigator.clipboard.writeText(text);
+            alert("Risultato copiato!");
+        }
+    }
+
+    // Init
+    showIntro();
+</script>
+
+</body>
+</html>
