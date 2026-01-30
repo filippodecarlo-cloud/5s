@@ -109,7 +109,7 @@
             background: rgba(0,0,0,0.15);
             border: 2px dashed rgba(0,0,0,0.3);
             border-radius: 5px;
-            pointer-events: none;
+            pointer-events: auto; 
         }
 
         .stain {
@@ -118,8 +118,9 @@
             border-radius: 50%;
             cursor: crosshair;
             opacity: 0.9;
-            transition: opacity 0.3s;
+            transition: opacity 0.1s; 
             z-index: 10;
+            touch-action: none; 
         }
         .stain.passive { pointer-events: none; opacity: 0.5; z-index: 5; }
         
@@ -195,19 +196,47 @@
         .legend-item { display: flex; flex-direction: column; align-items: center; font-size: 0.85rem; font-weight: 500; }
         .legend-item svg { width: 50px; height: 50px; margin-bottom: 5px; }
 
-        /* --- Phase 4 UI --- */
-        #seiketsu-ui {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 600px;
-            background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; color: #333;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); text-align: center;
+        /* --- Phase 4 UI Elements --- */
+        .label-draggable {
+            position: absolute;
+            background: white;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 5px;
+            width: 140px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 0.75rem;
+            color: #333;
+            text-align: center;
+            z-index: 100;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
-        .label-options { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-        .label-opt {
-            padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; text-align: center; width: 30%;
-            transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px;
+        .label-draggable:active { cursor: grabbing; transform: scale(1.05); z-index: 110; }
+        .label-draggable img, .label-draggable svg { max-width: 80%; max-height: 30px; }
+        
+        .bin-slot {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 70px;
+            border: 3px dashed #94a3b8;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.5);
+            font-weight: bold;
+            font-size: 0.9rem;
         }
-        .label-opt:hover { border-color: var(--accent); background: #eff6ff; }
-        .label-img { width: 100%; height: 40px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #666; background: white; border-radius: 4px; }
 
         /* --- Audit Flash --- */
         #flash-overlay {
@@ -230,6 +259,12 @@
             border-radius: 20px; font-weight: bold; display: none; z-index: 300;
             animation: pulse 1s infinite;
         }
+
+        /* --- Final Report Table --- */
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        .report-table th, .report-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
+        .report-table th { background: #f1f5f9; color: #334155; }
+        .report-table tr:nth-child(even) { background: #f8fafc; }
 
     </style>
 </head>
@@ -273,6 +308,48 @@
 <div id="toast">Feedback</div>
 
 <script>
+    /* --- AUDIO SYSTEM --- */
+    // Simple synth using Web Audio API to avoid external files
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'success') {
+            // High pitch ascending
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(500, now);
+            osc.frequency.exponentialRampToValueAtTime(1000, now + 0.1);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'error') {
+            // Low pitch buzz
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'click') {
+            // Short blip
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, now);
+            gainNode.gain.setValueAtTime(0.05, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.start(now);
+            osc.stop(now + 0.05);
+        }
+    }
+
     /* --- ASSETS (SVG) --- */
     const ICONS = {
         // TOOLS
@@ -310,7 +387,7 @@
         ruler: "Squadra"
     };
 
-    const PHASE_PASSWORDS = ["", "iri", "not", "osi", "ust", "eku"];
+    const PHASE_PASSWORDS = ["", "iri", "osi", "not", "ust", "eku"];
 
     /* --- GAME STATE --- */
     const state = {
@@ -320,11 +397,16 @@
         isPaused: false, 
         
         layout: { tools: [], trash: [], stains: [] },
+        
+        // Reporting
+        phaseStats: [], // {phase: 1, time: 20, mistakes: 2}
 
         remainingTrash: 0,
         placedTools: 0,
         cleanedSpots: 0,
         totalSpots: 6, 
+        auditAnomalies: 3,
+        foundAnomalies: 0,
         foundDefects: 0,
         totalDefects: 2,
         mistakes: 0
@@ -385,7 +467,6 @@
     }
 
     function generateLevelLayout() {
-        // Safe Zones
         state.layout.tools = TOOL_LIST.map(t => ({
             type: t,
             x: Math.random() * 650 + 100, 
@@ -394,7 +475,21 @@
         }));
 
         const trashTypes = ['trash_can', 'trash_banana', 'trash_gear', 'trash_can', 'trash_gear'];
+        const numDuplicates = 6 + Math.floor(Math.random() * 3);
+        const duplicates = [];
+        for(let i=0; i<numDuplicates; i++) {
+            const randomTool = TOOL_LIST[Math.floor(Math.random() * TOOL_LIST.length)];
+            duplicates.push(randomTool);
+        }
+
         state.layout.trash = trashTypes.map(t => ({
+            type: t,
+            x: Math.random() * 650 + 100, 
+            y: Math.random() * 300 + 80,  
+            rot: Math.random() * 360
+        }));
+        
+        state.layout.duplicates = duplicates.map(t => ({
             type: t,
             x: Math.random() * 650 + 100, 
             y: Math.random() * 300 + 80,  
@@ -412,10 +507,15 @@
     }
 
     function checkPassword(phaseNum) {
+        // Ensure audio context is started on first user interaction
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
         const input = document.getElementById('phase-pass');
         if (input && input.value.trim().toLowerCase() === PHASE_PASSWORDS[phaseNum]) {
+            playSound('success');
             startPhase(phaseNum);
         } else {
+            playSound('error');
             showToast("Password errata!", "danger");
             if(input) {
                 input.style.borderColor = "red";
@@ -429,6 +529,7 @@
         state.phase = p;
         state.startTime = Date.now();
         state.isPaused = false;
+        state.mistakes = 0; 
         els.container.innerHTML = ''; 
         els.overlay.style.display = 'none';
         els.hint.style.display = 'none';
@@ -457,6 +558,17 @@
 
     function endPhase() {
         clearInterval(state.timerInterval);
+        
+        // Save stats
+        const duration = (Date.now() - state.startTime) / 1000;
+        state.phaseStats.push({
+            phase: state.phase,
+            time: duration,
+            mistakes: state.mistakes
+        });
+
+        playSound('success'); // Level complete sound
+
         if (state.phase < 5) showModal('intermission', state.phase);
         else showModal('victory');
     }
@@ -471,10 +583,15 @@
             spawnItem(t.type, t.x, t.y, 'good', t.rot);
         });
 
-        state.remainingTrash = state.layout.trash.length;
+        state.layout.duplicates.forEach(t => {
+            spawnItem(t.type, t.x, t.y, 'duplicate', t.rot);
+        });
+
         state.layout.trash.forEach(t => {
             spawnItem(t.type, t.x, t.y, 'bad', t.rot);
         });
+
+        state.remainingTrash = state.layout.trash.length + state.layout.duplicates.length;
 
         addLegend();
     }
@@ -490,16 +607,31 @@
         els.container.appendChild(leg);
     }
 
-    function handleSeiriClick(item, type, element) {
-        if (state.isPaused) return; 
-        if (type === 'bad') {
+    function handleSeiriClick(element, typeString) {
+        if (state.isPaused) return;
+
+        if (typeString.startsWith('trash_')) {
+            playSound('success');
             element.style.transform = "scale(0) rotate(180deg)";
             setTimeout(() => element.remove(), 200);
-            showToast("Red Tag! 🗑️", "success");
+            showToast("Rifiuto eliminato! 🗑️", "success");
+            state.remainingTrash--;
+            if (state.remainingTrash <= 0) setTimeout(endPhase, 500);
+            return;
+        }
+
+        const count = document.querySelectorAll(`.item[data-tool-type="${typeString}"]`).length;
+        
+        if (count > 1) {
+            playSound('success');
+            element.style.transform = "scale(0) rotate(180deg)";
+            setTimeout(() => element.remove(), 200);
+            showToast("Doppione rimosso! 🔨", "success");
             state.remainingTrash--;
             if (state.remainingTrash <= 0) setTimeout(endPhase, 500);
         } else {
-            showToast("No! È uno strumento utile! ⚠️", "danger");
+            playSound('error');
+            showToast("Serve! È l'ultimo rimasto! ⚠️", "danger");
             element.style.filter = "drop-shadow(0 0 10px red)";
             setTimeout(() => element.style.filter = "", 500);
             state.mistakes++;
@@ -510,9 +642,14 @@
     function setupSeiso() {
         state.cleanedSpots = 0;
         state.foundDefects = 0;
+        state.totalSpots = 6; 
         
         state.layout.tools.forEach(t => {
-            spawnItem(t.type, t.x, t.y, 'static', t.rot);
+            const toolEl = spawnItem(t.type, t.x, t.y, 'static', t.rot);
+            if (Math.random() > 0.7) {
+                createStain(20, 20, 30, false, false, toolEl);
+                state.totalSpots++;
+            }
         });
 
         state.layout.stains.forEach(s => {
@@ -520,50 +657,74 @@
         });
     }
 
-    function createStain(x, y, size, hasDefect, isPassive) {
+    function createStain(x, y, size, hasDefect, isPassive, parent = els.container) {
         const div = document.createElement('div');
         div.className = 'stain';
         if(isPassive) div.classList.add('passive');
-        div.style.left = x + 'px'; div.style.top = y + 'px';
-        div.style.width = size + 'px'; div.style.height = size + 'px';
+        
+        div.style.left = x + 'px'; 
+        div.style.top = y + 'px';
+        div.style.width = size + 'px'; 
+        div.style.height = size + 'px';
+        
+        let scrubDistance = 0;
+        const requiredDistance = 250; 
         
         let defectEl = null;
         if (hasDefect && !isPassive) {
             defectEl = document.createElement('div');
             defectEl.className = 'defect';
             defectEl.innerHTML = ICONS.crack;
-            defectEl.style.left = (x + size/2 - 20) + 'px'; 
-            defectEl.style.top = (y + size/2 - 20) + 'px';
+            if (parent === els.container) {
+                defectEl.style.left = (x + size/2 - 20) + 'px'; 
+                defectEl.style.top = (y + size/2 - 20) + 'px';
+            }
             
-            defectEl.onclick = () => {
-                if (state.isPaused) return;
-                if (defectEl.classList.contains('found')) return;
-                defectEl.classList.add('found');
-                showToast("Difetto Confermato! ✅", "success");
-                state.foundDefects++;
-                checkSeisoCompletion();
-            };
-            els.container.appendChild(defectEl);
+            if (defectEl && parent === els.container) {
+                defectEl.onclick = () => {
+                    if (state.isPaused) return;
+                    if (defectEl.classList.contains('found')) return;
+                    playSound('success');
+                    defectEl.classList.add('found');
+                    showToast("Difetto Confermato! ✅", "success");
+                    state.foundDefects++;
+                    checkSeisoCompletion();
+                };
+                els.container.appendChild(defectEl);
+            }
         }
 
         if (!isPassive) {
-            div.onclick = () => {
+            const handleScrub = (e) => {
                 if (state.isPaused) return;
-                div.style.opacity = 0;
-                div.style.pointerEvents = 'none'; 
-                setTimeout(() => div.remove(), 300);
-                showToast("Pulito! ✨", "success");
-                state.cleanedSpots++;
-                
-                if (hasDefect && defectEl) {
-                    defectEl.style.display = 'block'; 
-                    showToast("ANOMALIA! Cliccala!", "danger");
+                const movement = 5; 
+                scrubDistance += movement;
+                const opacity = Math.max(0, 1 - (scrubDistance / requiredDistance));
+                div.style.opacity = opacity;
+
+                if (scrubDistance >= requiredDistance) {
+                    playSound('success'); // Sound on clean
+                    div.remove();
+                    div.onmousemove = null;
+                    div.ontouchmove = null;
+                    
+                    showToast("Pulito! ✨", "success");
+                    state.cleanedSpots++;
+                    
+                    if (hasDefect && defectEl) {
+                        defectEl.style.display = 'block'; 
+                        playSound('error'); // Attention sound
+                        showToast("ANOMALIA! Cliccala!", "danger");
+                    }
+                    checkSeisoCompletion();
                 }
-                checkSeisoCompletion();
             };
+
+            div.onmousemove = handleScrub;
+            div.ontouchmove = handleScrub;
         }
         
-        els.container.appendChild(div);
+        parent.appendChild(div);
     }
 
     function checkSeisoCompletion() {
@@ -605,6 +766,7 @@
         div.dataset.type = type;
         div.innerHTML = `<div style="opacity:0.2; width:100%; height:100%">${ICONS[type]}</div>`;
         els.container.appendChild(div);
+        return div; 
     }
 
     function spawnDraggable(type, x, y) {
@@ -618,6 +780,7 @@
         div.onmousedown = startDrag;
         div.ontouchstart = startDrag;
         els.container.appendChild(div);
+        return div;
     }
 
     // Drag Logic
@@ -627,6 +790,10 @@
     function startDrag(e) {
         if (state.isPaused) return;
         e.preventDefault();
+        
+        // Audio interaction start (optional, maybe subtle click)
+        playSound('click');
+
         activeDrag = e.currentTarget;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -659,35 +826,73 @@
         const toolRect = activeDrag.getBoundingClientRect();
         const toolCx = toolRect.left + toolRect.width/2;
         const toolCy = toolRect.top + toolRect.height/2;
-        const shadows = document.querySelectorAll('.shadow-slot');
-        let placed = false;
-
-        shadows.forEach(shadow => {
-            if (shadow.dataset.type === activeDrag.dataset.type) {
-                const sRect = shadow.getBoundingClientRect();
+        
+        // Handle LABEL Drag (Phase 4)
+        if (activeDrag.classList.contains('label-draggable')) {
+            const slot = document.querySelector('.bin-slot');
+            if (slot) {
+                const sRect = slot.getBoundingClientRect();
                 if (toolCx > sRect.left && toolCx < sRect.right && toolCy > sRect.top && toolCy < sRect.bottom) {
-                    activeDrag.style.left = shadow.style.left;
-                    activeDrag.style.top = shadow.style.top;
-                    activeDrag.onmousedown = null; activeDrag.ontouchstart = null;
-                    activeDrag.style.cursor = 'default';
-                    showToast("OK! 👍", "success");
-                    placed = true;
-                    state.placedTools++;
+                    if (activeDrag.dataset.correct === "true") {
+                        // Success
+                        playSound('success');
+                        activeDrag.style.left = (parseInt(slot.style.left || 50) + 'px'); 
+                        activeDrag.style.display = 'none'; // Hide dragged
+                        slot.style.background = '#22c55e'; // Green slot
+                        slot.style.color = 'white';
+                        slot.innerText = "OK";
+                        showToast("Perfetto! Icona + Colore + Testo = Standard.", "success");
+                        setTimeout(endPhase, 1500);
+                    } else {
+                        // Fail
+                        playSound('error');
+                        showToast("Etichetta non standard. Riprova.", "danger");
+                        state.mistakes++; // Mistake Phase 4
+                        activeDrag.style.left = activeDrag.dataset.startX + 'px';
+                        activeDrag.style.top = activeDrag.dataset.startY + 'px';
+                    }
+                } else {
+                    // Reset
+                    activeDrag.style.left = activeDrag.dataset.startX + 'px';
+                    activeDrag.style.top = activeDrag.dataset.startY + 'px';
                 }
             }
-        });
+        } 
+        // Handle TOOL Drag (Phase 3)
+        else {
+            const shadows = document.querySelectorAll('.shadow-slot');
+            let placed = false;
+            shadows.forEach(shadow => {
+                if (shadow.dataset.type === activeDrag.dataset.type) {
+                    const sRect = shadow.getBoundingClientRect();
+                    if (toolCx > sRect.left && toolCx < sRect.right && toolCy > sRect.top && toolCy < sRect.bottom) {
+                        activeDrag.style.left = shadow.style.left;
+                        activeDrag.style.top = shadow.style.top;
+                        activeDrag.onmousedown = null; activeDrag.ontouchstart = null;
+                        activeDrag.style.cursor = 'default';
+                        playSound('success');
+                        showToast("OK! 👍", "success");
+                        placed = true;
+                        state.placedTools++;
+                    }
+                }
+            });
+            if (!placed) {
+                playSound('error');
+                showToast("Riprova...", "danger");
+                state.mistakes++; // Mistake Phase 3
+            }
+            if (state.placedTools === TOOL_LIST.length) setTimeout(endPhase, 500);
+        }
 
-        if (!placed) showToast("Riprova...", "danger");
         activeDrag = null;
         document.removeEventListener('mousemove', doDrag);
         document.removeEventListener('mouseup', stopDrag);
         document.removeEventListener('touchmove', doDrag);
         document.removeEventListener('touchend', stopDrag);
-        
-        if (state.placedTools === TOOL_LIST.length) setTimeout(endPhase, 500);
     }
 
-    /* --- PHASE 4: SEIKETSU --- */
+    /* --- PHASE 4: SEIKETSU (Standardize) --- */
     function setupSeiketsu() {
         const bin = document.createElement('div');
         bin.style.cssText = "position:absolute; left:50%; top:40%; transform:translate(-50%, -50%); width:400px; height:250px; background:#475569; border:4px solid #334155; border-radius:10px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px;";
@@ -696,35 +901,64 @@
         sampleTools.forEach(t => {
             bin.innerHTML += `<div style="width:60px; height:60px;">${ICONS[t]}</div>`;
         });
+        
+        const slot = document.createElement('div');
+        slot.className = 'bin-slot';
+        slot.innerText = "ZONA ETICHETTA";
+        bin.appendChild(slot);
+        
         els.container.appendChild(bin);
 
-        const ui = document.createElement('div');
-        ui.id = "seiketsu-ui";
-        ui.innerHTML = `
-            <h3 style="margin:0 0 10px 0;">Scegli l'etichetta Standard:</h3>
-            <div class="label-options">
-                <div class="label-opt" onclick="checkLabel(1)"><div class="label-img" style="font-family:'Comic Sans MS'">MISTI</div><div style="font-size:0.7rem">Testo</div></div>
-                <div class="label-opt" onclick="checkLabel(2)"><div class="label-img" style="background:yellow; font-weight:bold">X-99</div><div style="font-size:0.7rem">Codice</div></div>
-                <div class="label-opt" onclick="checkLabel(3)"><div class="label-img" style="background:#2563eb; color:white; font-weight:bold; display:flex; gap:3px; padding:2px;"><span>🧰</span> STD-KIT</div><div style="font-size:0.7rem">Visual</div></div>
-            </div>
-        `;
-        els.container.appendChild(ui);
+        const startY = 460;
+        
+        // Option 1: Text
+        spawnLabel(200, startY, 
+            `<div style="font-family:'Comic Sans MS'; font-weight:bold;">MISTI</div><div style="font-size:0.6rem">Solo Testo</div>`, 
+            false
+        );
+
+        // Option 2: Code
+        spawnLabel(400, startY, 
+            `<div style="background:yellow; padding:2px 5px; font-weight:bold;">X-99</div><div style="font-size:0.6rem">Solo Codice</div>`, 
+            false
+        );
+
+        // Option 3: Visual Standard
+        spawnLabel(600, startY, 
+            `<div style="background:#2563eb; color:white; font-weight:bold; display:flex; align-items:center; padding:2px 5px; gap:5px; border-radius:4px;">
+                <div style="width:15px;">${ICONS.hammer}</div>
+                <div style="width:15px;">${ICONS.wrench}</div>
+                <span>STD</span>
+             </div>
+             <div style="font-size:0.6rem">Visual</div>`, 
+            true
+        );
+        
+        showToast("Trascina l'etichetta corretta sulla scatola!", "success");
     }
 
-    function checkLabel(opt) {
-        if (state.isPaused) return;
-        if (opt === 1) {
-            showToast("Solo testo? Troppo lento da leggere. Serve un aiuto visivo.", "danger");
-        } else if (opt === 2) {
-            showToast("Solo un codice? Chi non conosce il codice non capisce. Serve contesto.", "danger");
-        } else if (opt === 3) {
-            showToast("Perfetto! Icona + Colore + Testo = Comprensione immediata.", "success");
-            setTimeout(endPhase, 1000);
-        }
+    function spawnLabel(x, y, content, isCorrect) {
+        const div = document.createElement('div');
+        div.className = 'label-draggable';
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+        div.innerHTML = content;
+        div.dataset.correct = isCorrect;
+        
+        div.dataset.startX = x;
+        div.dataset.startY = y;
+
+        div.onmousedown = startDrag;
+        div.ontouchstart = startDrag;
+        
+        els.container.appendChild(div);
     }
 
     /* --- PHASE 5: SHITSUKE (Audit) --- */
     function setupShitsuke() {
+        state.auditAnomalies = 3;
+        state.foundAnomalies = 0;
+        
         renderAuditBoard(true); 
         const msg = document.createElement('div');
         msg.innerHTML = "Memorizza lo standard (3s)...";
@@ -737,7 +971,7 @@
             els.container.innerHTML = '';
             renderAuditBoard(false); 
             const hint = document.createElement('div');
-            hint.innerHTML = "Trova l'anomalia!";
+            hint.innerHTML = "Trova le 3 anomalie!";
             hint.style.cssText = "position:absolute; top:10px; left:50%; transform:translateX(-50%); color:#ef4444; font-size:1.5rem; background:rgba(255,255,255,0.9); padding:5px 15px; border-radius:8px; z-index:100;";
             els.container.appendChild(hint);
         }, 4500);
@@ -754,21 +988,66 @@
             const x = startX + col * gapX;
             const y = startY + row * gapY;
             
-            createShadow(tool, x, y, 80, 80);
-            const item = createStaticItem(tool, x, y);
+            // Shadows always exist (except for missing item detection, shadow is the target)
+            const shadow = createShadow(tool, x, y, 80, 80);
             
-            if (!isPerfect && tool === 'hammer') {
-                item.style.transform = "rotate(180deg)";
-                item.style.filter = "sepia(1) hue-rotate(-50deg) saturate(3)";
-                item.onclick = () => {
-                    if (state.isPaused) return;
-                    item.style.border = "3px solid red";
-                    showToast("Anomalia Trovata! Audit Superato.", "success");
-                    setTimeout(endPhase, 1500);
-                };
+            let isThisMissing = false;
+            let isThisRotated = false;
+
+            if (!isPerfect) {
+                if (tool === 'tape') isThisMissing = true;
+                if (tool === 'hammer' || tool === 'wrench') isThisRotated = true;
             }
-            els.container.appendChild(item);
+
+            if (isThisMissing) {
+                // If missing, click the shadow to find anomaly
+                shadow.style.cursor = "pointer";
+                shadow.onclick = () => {
+                    if (state.isPaused) return;
+                    if (shadow.dataset.found === "true") return;
+                    shadow.dataset.found = "true";
+                    shadow.style.border = "3px solid red";
+                    playSound('success');
+                    showToast("Oggetto Mancante Trovato!", "success");
+                    state.foundAnomalies++;
+                    checkAuditCompletion();
+                };
+            } else {
+                // Create Item
+                const item = createStaticItem(tool, x, y);
+                if (isThisRotated) {
+                    item.style.transform = "rotate(180deg)";
+                    item.style.filter = "sepia(1) hue-rotate(-50deg) saturate(3)";
+                    item.onclick = () => {
+                        if (state.isPaused) return;
+                        if (item.dataset.found === "true") return;
+                        item.dataset.found = "true";
+                        item.style.border = "3px solid red";
+                        playSound('success');
+                        showToast("Rotazione Errata Trovata!", "success");
+                        state.foundAnomalies++;
+                        checkAuditCompletion();
+                    };
+                } else {
+                    // Correct Item - Mistake if clicked
+                    item.onclick = () => {
+                        if (state.isPaused) return;
+                        if(!isPerfect) {
+                            playSound('error');
+                            showToast("Questo è corretto! ⚠️", "danger");
+                            state.mistakes++;
+                        }
+                    }
+                }
+                els.container.appendChild(item);
+            }
         });
+    }
+
+    function checkAuditCompletion() {
+        if (state.foundAnomalies >= state.auditAnomalies) {
+            setTimeout(endPhase, 1500);
+        }
     }
 
     function createStaticItem(type, x, y) {
@@ -787,8 +1066,12 @@
         div.innerHTML = ICONS[type];
         div.style.left = x + 'px'; div.style.top = y + 'px';
         div.style.transform = `rotate(${rot}deg)`;
-        if (logicType !== 'static') div.onclick = () => handleSeiriClick(div, logicType, div);
+        
+        div.dataset.toolType = type;
+
+        if (logicType !== 'static') div.onclick = () => handleSeiriClick(div, type);
         els.container.appendChild(div);
+        return div; 
     }
 
     function showToast(msg, type) {
@@ -810,7 +1093,7 @@
                     <strong>Obiettivo:</strong> Organizza i 10 strumenti.<br>
                     <strong>Regole:</strong> Clicca i rifiuti, Trascina gli attrezzi.
                 </div>
-                <input type="password" id="phase-pass" class="pass-input" placeholder="Password Fase 1">
+                <input type="password" id="phase-pass" class="pass-input" placeholder="Password Fase 1" onkeyup="if(event.key === 'Enter') checkPassword(1)">
                 <br>
                 <button class="btn" onclick="checkPassword(1)">Inizia</button>
             `;
@@ -819,21 +1102,71 @@
             const btns = ["", "Avvia 2. Seiso", "Avvia 3. Seiton", "Avvia 4. Seiketsu", "Avvia 5. Shitsuke"];
             const nextPhase = phaseNum + 1;
             
-            // Specific text for Shitsuke Intro
             let bodyText = texts[phaseNum];
-            if(phaseNum === 4) bodyText = "Standard Definito. Ora serve la <b>Disciplina (Shitsuke)</b>. Riesci a notare un'anomalia in meno di 3 secondi? Facciamo un Audit.";
+            if(phaseNum === 4) bodyText = "Standard Definito. Ora serve la <b>Disciplina (Shitsuke)</b>. Riesci a notare 3 anomalie in meno di 5 secondi? Facciamo un Audit.";
             
+            let mistakesHtml = '';
+            if (phaseNum !== 2) {
+                mistakesHtml = `<p style="color:#ef4444; font-weight:bold;">Errori commessi: ${state.mistakes}</p>`;
+            }
+
             html = `
                 <h2>Fase ${phaseNum} Completata</h2>
+                <p>Tempo: <strong>${els.time.textContent}</strong></p>
+                ${mistakesHtml}
                 <p>${bodyText}</p>
-                <input type="password" id="phase-pass" class="pass-input" placeholder="Password Fase ${nextPhase}">
+                <input type="password" id="phase-pass" class="pass-input" placeholder="Password Fase ${nextPhase}" onkeyup="if(event.key === 'Enter') checkPassword(${nextPhase})">
                 <br>
                 <button class="btn" onclick="checkPassword(${nextPhase})">${btns[phaseNum]}</button>
             `;
         } else if (type === 'victory') {
-            html = `<h2 style="color:var(--success)">🏆 Certificato 5S</h2><p>Hai organizzato perfettamente i 10 strumenti!</p><button class="btn" onclick="location.reload()">Rigioca</button>`;
+            // Genera tabella Report
+            let reportRows = '';
+            let totalTime = 0;
+            let totalErrors = 0;
+            
+            state.phaseStats.forEach(stat => {
+                totalTime += stat.time;
+                totalErrors += stat.mistakes;
+                reportRows += `
+                    <tr>
+                        <td>Fase ${stat.phase}</td>
+                        <td>${stat.time.toFixed(1)}s</td>
+                        <td>${stat.mistakes}</td>
+                    </tr>
+                `;
+            });
+
+            html = `
+                <h2 style="color:var(--success)">🏆 Certificato 5S</h2>
+                <p>Simulazione Completata!</p>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Fase</th>
+                            <th>Tempo</th>
+                            <th>Errori</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${reportRows}
+                        <tr style="font-weight:bold; background:#e2e8f0;">
+                            <td>TOTALE</td>
+                            <td>${totalTime.toFixed(1)}s</td>
+                            <td>${totalErrors}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+                <button class="btn" onclick="location.reload()">Rigioca</button>
+            `;
         }
         els.modal.innerHTML = html;
+        
+        setTimeout(() => {
+            const input = document.getElementById('phase-pass');
+            if(input) input.focus();
+        }, 100);
     }
 
     initGame();
