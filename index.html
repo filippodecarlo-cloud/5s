@@ -172,6 +172,11 @@
             transition: all 0.2s;
         }
         .btn:hover { background: #1d4ed8; transform: translateY(-2px); }
+        .pass-input {
+            padding: 10px; width: 60%; margin-bottom: 10px; border: 2px solid #ccc; border-radius: 6px;
+            font-size: 1rem; text-align: center; letter-spacing: 2px;
+        }
+        .pass-input:focus { border-color: var(--accent); outline: none; }
 
         /* --- LEGEND MODAL SPECIFIC --- */
         #legend-overlay {
@@ -259,7 +264,7 @@
 <div id="legend-overlay">
     <div class="legend-modal">
         <h2 style="margin-top:0; color:#1e293b;">Legenda Strumenti</h2>
-        <div class="legend-grid" id="legend-grid-content"></div> <!-- RIMOSSO IL COMMENTO INTERNO -->
+        <div class="legend-grid" id="legend-grid-content"></div> 
         <button class="btn" onclick="toggleLegend()">Chiudi</button>
     </div>
 </div>
@@ -305,12 +310,14 @@
         ruler: "Squadra"
     };
 
+    const PHASE_PASSWORDS = ["", "iri", "not", "osi", "ust", "eku"];
+
     /* --- GAME STATE --- */
     const state = {
         phase: 0,
         startTime: 0,
         timerInterval: null,
-        isPaused: false, // NEW: Pause state for legend
+        isPaused: false, 
         
         layout: { tools: [], trash: [], stains: [] },
 
@@ -338,15 +345,12 @@
     /* --- LEGEND LOGIC --- */
     function toggleLegend() {
         if (els.legendOverlay.style.display === 'flex') {
-            // Close Legend
             els.legendOverlay.style.display = 'none';
             state.isPaused = false;
         } else {
-            // Open Legend
             const grid = document.getElementById('legend-grid-content');
-            // Controllo più robusto: se non ci sono figli (elementi), popola
             if (grid.children.length === 0) {
-                grid.innerHTML = ''; // Pulisce eventuali spazi vuoti o testo
+                grid.innerHTML = ''; 
                 TOOL_LIST.forEach(t => {
                     grid.innerHTML += `
                         <div class="legend-item">
@@ -381,7 +385,7 @@
     }
 
     function generateLevelLayout() {
-        // Safe Zones: X 100-750, Y 80-380
+        // Safe Zones
         state.layout.tools = TOOL_LIST.map(t => ({
             type: t,
             x: Math.random() * 650 + 100, 
@@ -407,6 +411,20 @@
         ];
     }
 
+    function checkPassword(phaseNum) {
+        const input = document.getElementById('phase-pass');
+        if (input && input.value.trim().toLowerCase() === PHASE_PASSWORDS[phaseNum]) {
+            startPhase(phaseNum);
+        } else {
+            showToast("Password errata!", "danger");
+            if(input) {
+                input.style.borderColor = "red";
+                input.value = "";
+                setTimeout(() => input.style.borderColor = "#ccc", 1000);
+            }
+        }
+    }
+
     function startPhase(p) {
         state.phase = p;
         state.startTime = Date.now();
@@ -421,7 +439,6 @@
         if(state.timerInterval) clearInterval(state.timerInterval);
         state.timerInterval = setInterval(() => {
             if (state.isPaused) {
-                // Adjust start time so timer doesn't jump when unpaused
                 state.startTime += 1000;
                 return;
             }
@@ -466,15 +483,15 @@
         const leg = document.createElement('div');
         leg.id = "seiri-legend";
         leg.innerHTML = `
-            <div class="legend-row bad-col"><span class="legend-title">ELIMINA:</span> Lattina, Buccia, Ingranaggio</div>
+            <div class="legend-row bad-col"><span class="legend-title">OBIETTIVO:</span> Elimina ciò che non è necessario</div>
             <div style="height:1px; background:#e2e8f0; width:100%; margin:2px 0;"></div>
-            <div class="legend-row good-col"><span class="legend-title">TIENI:</span> Utensili (Vedi Legenda in alto)</div>
+            <div class="legend-row good-col"><span class="legend-title">NOTA:</span> Non toccare gli strumenti utili</div>
         `;
         els.container.appendChild(leg);
     }
 
     function handleSeiriClick(item, type, element) {
-        if (state.isPaused) return; // Prevent clicks while legend is open
+        if (state.isPaused) return; 
         if (type === 'bad') {
             element.style.transform = "scale(0) rotate(180deg)";
             setTimeout(() => element.remove(), 200);
@@ -696,10 +713,14 @@
 
     function checkLabel(opt) {
         if (state.isPaused) return;
-        if (opt === 3) {
-            showToast("Standard Corretto!", "success");
+        if (opt === 1) {
+            showToast("Solo testo? Troppo lento da leggere. Serve un aiuto visivo.", "danger");
+        } else if (opt === 2) {
+            showToast("Solo un codice? Chi non conosce il codice non capisce. Serve contesto.", "danger");
+        } else if (opt === 3) {
+            showToast("Perfetto! Icona + Colore + Testo = Comprensione immediata.", "success");
             setTimeout(endPhase, 1000);
-        } else showToast("Non ottimale.", "danger");
+        }
     }
 
     /* --- PHASE 5: SHITSUKE (Audit) --- */
@@ -742,7 +763,7 @@
                 item.onclick = () => {
                     if (state.isPaused) return;
                     item.style.border = "3px solid red";
-                    showToast("Anomalia Trovata!", "success");
+                    showToast("Anomalia Trovata! Audit Superato.", "success");
                     setTimeout(endPhase, 1500);
                 };
             }
@@ -774,18 +795,41 @@
         els.toast.textContent = msg;
         els.toast.style.backgroundColor = type === 'success' ? 'var(--success)' : 'var(--danger)';
         els.toast.style.opacity = 1;
-        setTimeout(() => els.toast.style.opacity = 0, 2000);
+        setTimeout(() => els.toast.style.opacity = 0, 3000);
     }
 
     function showModal(type, phaseNum) {
         els.overlay.style.display = 'flex';
         let html = '';
+        
         if (type === 'intro') {
-            html = `<h2>🔧 The Workbench</h2><p>5S Master Simulation</p><div style="text-align:left; background:#f1f5f9; padding:15px; border-radius:8px; font-size:0.9rem; margin-bottom:20px;"><strong>Obiettivo:</strong> Organizza i 10 strumenti.<br><strong>Regole:</strong> Clicca i rifiuti, Trascina gli attrezzi.</div><button class="btn" onclick="startPhase(1)">Inizia</button>`;
+            html = `
+                <h2>🔧 The Workbench</h2>
+                <p>5S Master Simulation</p>
+                <div style="text-align:left; background:#f1f5f9; padding:15px; border-radius:8px; font-size:0.9rem; margin-bottom:20px;">
+                    <strong>Obiettivo:</strong> Organizza i 10 strumenti.<br>
+                    <strong>Regole:</strong> Clicca i rifiuti, Trascina gli attrezzi.
+                </div>
+                <input type="password" id="phase-pass" class="pass-input" placeholder="Password Fase 1">
+                <br>
+                <button class="btn" onclick="checkPassword(1)">Inizia</button>
+            `;
         } else if (type === 'intermission') {
             const texts = ["", "Rifiuti rimossi.", "Difetti segnalati!", "Tutto ordinato.", "Standard definito."];
             const btns = ["", "Avvia 2. Seiso", "Avvia 3. Seiton", "Avvia 4. Seiketsu", "Avvia 5. Shitsuke"];
-            html = `<h2>Fase ${phaseNum} Completata</h2><p>${texts[phaseNum]}</p><button class="btn" onclick="startPhase(${phaseNum + 1})">${btns[phaseNum]}</button>`;
+            const nextPhase = phaseNum + 1;
+            
+            // Specific text for Shitsuke Intro
+            let bodyText = texts[phaseNum];
+            if(phaseNum === 4) bodyText = "Standard Definito. Ora serve la <b>Disciplina (Shitsuke)</b>. Riesci a notare un'anomalia in meno di 3 secondi? Facciamo un Audit.";
+            
+            html = `
+                <h2>Fase ${phaseNum} Completata</h2>
+                <p>${bodyText}</p>
+                <input type="password" id="phase-pass" class="pass-input" placeholder="Password Fase ${nextPhase}">
+                <br>
+                <button class="btn" onclick="checkPassword(${nextPhase})">${btns[phaseNum]}</button>
+            `;
         } else if (type === 'victory') {
             html = `<h2 style="color:var(--success)">🏆 Certificato 5S</h2><p>Hai organizzato perfettamente i 10 strumenti!</p><button class="btn" onclick="location.reload()">Rigioca</button>`;
         }
