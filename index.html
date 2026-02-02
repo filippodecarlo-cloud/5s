@@ -309,7 +309,6 @@
 
 <script>
     /* --- AUDIO SYSTEM --- */
-    // Simple synth using Web Audio API to avoid external files
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playSound(type) {
@@ -322,7 +321,6 @@
         const now = audioCtx.currentTime;
 
         if (type === 'success') {
-            // High pitch ascending
             osc.type = 'sine';
             osc.frequency.setValueAtTime(500, now);
             osc.frequency.exponentialRampToValueAtTime(1000, now + 0.1);
@@ -331,7 +329,6 @@
             osc.start(now);
             osc.stop(now + 0.3);
         } else if (type === 'error') {
-            // Low pitch buzz
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(150, now);
             osc.frequency.linearRampToValueAtTime(100, now + 0.2);
@@ -340,7 +337,6 @@
             osc.start(now);
             osc.stop(now + 0.2);
         } else if (type === 'click') {
-            // Short blip
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(800, now);
             gainNode.gain.setValueAtTime(0.05, now);
@@ -387,7 +383,10 @@
         ruler: "Squadra"
     };
 
-    const PHASE_PASSWORDS = ["", "iri", "osi", "not", "ust", "eku"];
+    // PASSWORD AGGIORNATE
+    // Phase 2: Seiton -> not
+    // Phase 3: Seiso -> osi
+    const PHASE_PASSWORDS = ["", "iri", "not", "osi", "ust", "eku"];
 
     /* --- GAME STATE --- */
     const state = {
@@ -467,6 +466,7 @@
     }
 
     function generateLevelLayout() {
+        // Safe Zones
         state.layout.tools = TOOL_LIST.map(t => ({
             type: t,
             x: Math.random() * 650 + 100, 
@@ -507,7 +507,6 @@
     }
 
     function checkPassword(phaseNum) {
-        // Ensure audio context is started on first user interaction
         if (audioCtx.state === 'suspended') audioCtx.resume();
         
         const input = document.getElementById('phase-pass');
@@ -534,7 +533,8 @@
         els.overlay.style.display = 'none';
         els.hint.style.display = 'none';
         
-        const phaseNames = ["", "1. Seiri (Separare)", "2. Seiso (Pulire)", "3. Seiton (Ordinare)", "4. Seiketsu (Std)", "5. Shitsuke (Audit)"];
+        // Correct order: 1.Seiri 2.Seiton 3.Seiso
+        const phaseNames = ["", "1. Seiri (Separare)", "2. Seiton (Ordinare)", "3. Seiso (Pulire)", "4. Seiketsu (Std)", "5. Shitsuke (Audit)"];
         els.phase.textContent = phaseNames[p];
 
         if(state.timerInterval) clearInterval(state.timerInterval);
@@ -550,8 +550,8 @@
         }, 1000);
 
         if (p === 1) setupSeiri();
-        else if (p === 2) setupSeiso();
-        else if (p === 3) setupSeiton();
+        else if (p === 2) setupSeiton(); // Swapped
+        else if (p === 3) setupSeiso();  // Swapped
         else if (p === 4) setupSeiketsu();
         else if (p === 5) setupShitsuke();
     }
@@ -559,7 +559,6 @@
     function endPhase() {
         clearInterval(state.timerInterval);
         
-        // Save stats
         const duration = (Date.now() - state.startTime) / 1000;
         state.phaseStats.push({
             phase: state.phase,
@@ -567,7 +566,7 @@
             mistakes: state.mistakes
         });
 
-        playSound('success'); // Level complete sound
+        playSound('success'); 
 
         if (state.phase < 5) showModal('intermission', state.phase);
         else showModal('victory');
@@ -638,20 +637,60 @@
         }
     }
 
-    /* --- PHASE 2: SEISO (Clean) --- */
+    /* --- PHASE 2: SEITON (Order) - WAS PHASE 3 --- */
+    function setupSeiton() {
+        // Grid logic same as before
+        const cols = 5;
+        const startX = 60; const gapX = 160;
+        const startY = 40; const gapY = 120;
+
+        // Need to spawn tools scattered again, because Phase 1 left them scattered.
+        // We will create the shadows (targets).
+        
+        state.layout.tools.forEach((t, i) => {
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+            const x = startX + col * gapX;
+            const y = startY + row * gapY;
+            
+            createShadow(t.type, x, y, 80, 80);
+            // Re-spawn tools draggable. Use random positions or keep them where they were?
+            // To simulate continuity, ideally we keep them. But for simplicity and to ensure they are on top,
+            // we respawn them. Let's spawn them scattered at the bottom/randomly as before.
+            spawnDraggable(t.type, Math.random()*700 + 50, Math.random()*150 + 320);
+        });
+
+        state.placedTools = 0;
+    }
+
+    /* --- PHASE 3: SEISO (Clean) - WAS PHASE 2 --- */
     function setupSeiso() {
         state.cleanedSpots = 0;
         state.foundDefects = 0;
         state.totalSpots = 6; 
         
-        state.layout.tools.forEach(t => {
-            const toolEl = spawnItem(t.type, t.x, t.y, 'static', t.rot);
+        // NOW tools should be ORDERED (in grid) because we finished Seiton.
+        const cols = 5;
+        const startX = 60; const gapX = 160;
+        const startY = 40; const gapY = 120;
+
+        state.layout.tools.forEach((t, i) => {
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+            const x = startX + col * gapX;
+            const y = startY + row * gapY;
+
+            // Spawn static tool in GRID position
+            const toolEl = spawnItem(t.type, x, y, 'static', 0); // Rotation 0 for ordered tools? Or t.rot? Seiton usually implies orientation too. Let's align them (rot 0).
+            
+            // Randomly add mini stains
             if (Math.random() > 0.7) {
                 createStain(20, 20, 30, false, false, toolEl);
                 state.totalSpots++;
             }
         });
 
+        // Spawn board stains
         state.layout.stains.forEach(s => {
             createStain(s.x, s.y, s.size, s.hasDefect, false);
         });
@@ -703,7 +742,7 @@
                 div.style.opacity = opacity;
 
                 if (scrubDistance >= requiredDistance) {
-                    playSound('success'); // Sound on clean
+                    playSound('success'); 
                     div.remove();
                     div.onmousemove = null;
                     div.ontouchmove = null;
@@ -713,7 +752,7 @@
                     
                     if (hasDefect && defectEl) {
                         defectEl.style.display = 'block'; 
-                        playSound('error'); // Attention sound
+                        playSound('error'); 
                         showToast("ANOMALIA! Cliccala!", "danger");
                     }
                     checkSeisoCompletion();
@@ -737,25 +776,6 @@
         if (state.cleanedSpots === state.totalSpots && state.foundDefects === state.totalDefects) {
              setTimeout(endPhase, 1000);
         }
-    }
-
-    /* --- PHASE 3: SEITON (Order) --- */
-    function setupSeiton() {
-        const cols = 5;
-        const startX = 60; const gapX = 160;
-        const startY = 40; const gapY = 120;
-
-        state.layout.tools.forEach((t, i) => {
-            const row = Math.floor(i / cols);
-            const col = i % cols;
-            const x = startX + col * gapX;
-            const y = startY + row * gapY;
-            
-            createShadow(t.type, x, y, 80, 80);
-            spawnDraggable(t.type, Math.random()*700 + 50, Math.random()*150 + 320);
-        });
-
-        state.placedTools = 0;
     }
 
     function createShadow(type, x, y, w, h) {
@@ -791,7 +811,6 @@
         if (state.isPaused) return;
         e.preventDefault();
         
-        // Audio interaction start (optional, maybe subtle click)
         playSound('click');
 
         activeDrag = e.currentTarget;
@@ -827,38 +846,33 @@
         const toolCx = toolRect.left + toolRect.width/2;
         const toolCy = toolRect.top + toolRect.height/2;
         
-        // Handle LABEL Drag (Phase 4)
         if (activeDrag.classList.contains('label-draggable')) {
             const slot = document.querySelector('.bin-slot');
             if (slot) {
                 const sRect = slot.getBoundingClientRect();
                 if (toolCx > sRect.left && toolCx < sRect.right && toolCy > sRect.top && toolCy < sRect.bottom) {
                     if (activeDrag.dataset.correct === "true") {
-                        // Success
                         playSound('success');
                         activeDrag.style.left = (parseInt(slot.style.left || 50) + 'px'); 
-                        activeDrag.style.display = 'none'; // Hide dragged
-                        slot.style.background = '#22c55e'; // Green slot
+                        activeDrag.style.display = 'none'; 
+                        slot.style.background = '#22c55e'; 
                         slot.style.color = 'white';
                         slot.innerText = "OK";
                         showToast("Perfetto! Icona + Colore + Testo = Standard.", "success");
                         setTimeout(endPhase, 1500);
                     } else {
-                        // Fail
                         playSound('error');
                         showToast("Etichetta non standard. Riprova.", "danger");
-                        state.mistakes++; // Mistake Phase 4
+                        state.mistakes++; 
                         activeDrag.style.left = activeDrag.dataset.startX + 'px';
                         activeDrag.style.top = activeDrag.dataset.startY + 'px';
                     }
                 } else {
-                    // Reset
                     activeDrag.style.left = activeDrag.dataset.startX + 'px';
                     activeDrag.style.top = activeDrag.dataset.startY + 'px';
                 }
             }
         } 
-        // Handle TOOL Drag (Phase 3)
         else {
             const shadows = document.querySelectorAll('.shadow-slot');
             let placed = false;
@@ -880,7 +894,7 @@
             if (!placed) {
                 playSound('error');
                 showToast("Riprova...", "danger");
-                state.mistakes++; // Mistake Phase 3
+                state.mistakes++; 
             }
             if (state.placedTools === TOOL_LIST.length) setTimeout(endPhase, 500);
         }
@@ -911,19 +925,16 @@
 
         const startY = 460;
         
-        // Option 1: Text
         spawnLabel(200, startY, 
             `<div style="font-family:'Comic Sans MS'; font-weight:bold;">MISTI</div><div style="font-size:0.6rem">Solo Testo</div>`, 
             false
         );
 
-        // Option 2: Code
         spawnLabel(400, startY, 
             `<div style="background:yellow; padding:2px 5px; font-weight:bold;">X-99</div><div style="font-size:0.6rem">Solo Codice</div>`, 
             false
         );
 
-        // Option 3: Visual Standard
         spawnLabel(600, startY, 
             `<div style="background:#2563eb; color:white; font-weight:bold; display:flex; align-items:center; padding:2px 5px; gap:5px; border-radius:4px;">
                 <div style="width:15px;">${ICONS.hammer}</div>
@@ -1087,7 +1098,7 @@
         
         if (type === 'intro') {
             html = `
-                <h2>🔧 The Workbench</h2>
+                <h2>Fase 1: Seiri (Separare)</h2>
                 <p>5S Master Simulation</p>
                 <div style="text-align:left; background:#f1f5f9; padding:15px; border-radius:8px; font-size:0.9rem; margin-bottom:20px;">
                     <strong>Obiettivo:</strong> Organizza i 10 strumenti.<br>
@@ -1095,18 +1106,25 @@
                 </div>
                 <input type="password" id="phase-pass" class="pass-input" placeholder="Password Fase 1" onkeyup="if(event.key === 'Enter') checkPassword(1)">
                 <br>
-                <button class="btn" onclick="checkPassword(1)">Inizia</button>
+                <button class="btn" onclick="checkPassword(1)">Avvia 1. Seiri</button>
             `;
         } else if (type === 'intermission') {
-            const texts = ["", "Rifiuti rimossi.", "Difetti segnalati!", "Tutto ordinato.", "Standard definito."];
-            const btns = ["", "Avvia 2. Seiso", "Avvia 3. Seiton", "Avvia 4. Seiketsu", "Avvia 5. Shitsuke"];
+            const texts = [
+                "", 
+                "Rifiuti rimossi. Ora organizziamo gli attrezzi.", // End Phase 1 -> Start 2 (Seiton)
+                "Tutto in ordine. Ora puliamo e ispezioniamo.",   // End Phase 2 -> Start 3 (Seiso)
+                "Pulizia completata. Ora standardizziamo.",       // End Phase 3 -> Start 4 (Seiketsu)
+                "Standard definito."                              // End Phase 4 -> Start 5 (Shitsuke)
+            ];
+            const btns = ["", "Avvia 2. Seiton", "Avvia 3. Seiso", "Avvia 4. Seiketsu", "Avvia 5. Shitsuke"];
             const nextPhase = phaseNum + 1;
             
             let bodyText = texts[phaseNum];
             if(phaseNum === 4) bodyText = "Standard Definito. Ora serve la <b>Disciplina (Shitsuke)</b>. Riesci a notare 3 anomalie in meno di 5 secondi? Facciamo un Audit.";
             
             let mistakesHtml = '';
-            if (phaseNum !== 2) {
+            // Show mistakes for relevant phases
+            if (phaseNum !== 0) {
                 mistakesHtml = `<p style="color:#ef4444; font-weight:bold;">Errori commessi: ${state.mistakes}</p>`;
             }
 
@@ -1120,7 +1138,6 @@
                 <button class="btn" onclick="checkPassword(${nextPhase})">${btns[phaseNum]}</button>
             `;
         } else if (type === 'victory') {
-            // Genera tabella Report
             let reportRows = '';
             let totalTime = 0;
             let totalErrors = 0;
