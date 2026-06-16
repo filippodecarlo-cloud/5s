@@ -72,6 +72,9 @@ table.deb th{background:#eef3fb;color:var(--blue)}
 #wb .slot{position:absolute;font-size:34px;line-height:1;transform:translate(-50%,-50%);opacity:.22;filter:grayscale(1)}
 #wb .slot.filled{opacity:0}
 #wb .slot.anom{opacity:.5;outline:3px solid var(--ok);outline-offset:2px;border-radius:6px}
+#wb .aside{position:absolute;left:3%;right:3%;bottom:3%;height:24%;border:2px dashed #1b4fa0;border-radius:10px;background:rgba(27,79,160,.08);pointer-events:none}
+#wb .aside .asidelbl{position:absolute;top:6px;left:10px;font-size:12px;font-weight:600;color:#1b4fa0;background:rgba(255,255,255,.7);padding:1px 6px;border-radius:4px}
+#wb .stdtag{position:absolute;transform:translate(-50%,-50%);font-size:10px;font-weight:600;background:#e5e7eb;color:#6b7280;padding:1px 7px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:background .2s,color .2s}
 #wb .stain{position:absolute;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#3a2e22 0%,rgba(58,46,34,.85) 55%,transparent 100%);transform:translate(-50%,-50%);cursor:pointer;z-index:30}
 #wb .defect{position:absolute;font-size:30px;transform:translate(-50%,-50%);z-index:40;cursor:pointer;animation:wbp 1s infinite}
 @keyframes wbp{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.2)}}
@@ -130,20 +133,23 @@ it:{
  tools2:{brush:"Pennelli",marker:"Marcatori",bucket:"Secchio",flashlight:"Torcia",gloves:"Guanti",square:"Squadra",battery:"Batterie"},
  occnote:"✂️ 🔪 🧲 🔩 servono solo ogni tanto: lasciali nel cassetto (toccarli conta come errore).",
  occnote2:"🧽 🧴 🧹 servono solo ogni tanto: lasciali nel cassetto (toccarli conta come errore).",
- wbGoal:["Elimina rifiuti e doppioni","Trascina ogni attrezzo nella sua sagoma","Strofina le macchie (tocca più volte)","Scegli l'etichetta da adottare come standard","Audit: trova le 3 anomalie"],
- wbNeeded:"Serve!",
+ wbGoal:["Elimina rifiuti e doppioni · metti a lato gli occasionali","Trascina ogni attrezzo nella sua sagoma","Strofina le macchie (tocca più volte)","Scegli l'etichetta da adottare come standard","Audit: trova le 3 anomalie"],
+ wbNeeded:"Serve!",wbAside:"Metti a lato · uso occasionale",
  wbPhase:[
-  {t:"Fase 1 · Seiri — Separare",d:"Il banco è invaso da oggetti che non c'entrano e da strumenti in più copie. Tocca per eliminare i rifiuti e i doppioni; lascia gli strumenti che servono.",l:"Seiri = tenere solo ciò che serve, nella giusta quantità. Rifiuti e duplicati sono entrambi spreco: occupano spazio e rallentano la ricerca."},
+  {t:"Fase 1 · Seiri — Separare",d:"Il banco è invaso da oggetti che non c'entrano, da strumenti in più copie e da attrezzi usati solo ogni tanto. Tocca per eliminare rifiuti e doppioni; trascina nello spazio «a lato» gli strumenti occasionali (🔪 🧲 🔩); lascia sul banco quelli che servono sempre.",l:"Seiri = tenere solo ciò che serve, nella giusta quantità. Rifiuti e duplicati sono entrambi spreco: occupano spazio e rallentano la ricerca. Gli strumenti che servono solo ogni tanto non sono rifiuti: si tengono, ma a lato, fuori dal banco di lavoro."},
   {t:"Fase 2 · Seiton — Sistemare",d:"Ora ogni strumento ha la sua sagoma sulla shadow board. Trascina ciascuno al suo posto.",l:"Seiton = un posto per ogni cosa, reso visibile. La sagoma dice a colpo d'occhio dove va ogni cosa e cosa manca: è visual management."},
   {t:"Fase 3 · Seisō — Splendere",d:"Il banco è sporco. Pulisci le macchie strofinando (tocca più volte). Attento: pulendo potrebbe emergere un'anomalia da segnalare.",l:"Seisō non è solo estetica: è pulizia-ispezione. Pulendo si scoprono difetti e perdite prima che diventino guasti."},
-  {t:"Fase 4 · Seiketsu — Standardizzare",d:"Scegli quale etichetta adottare come standard per tutti i contenitori.",l:"Seiketsu = rendere ripetibile da chiunque ciò che hai ottenuto. Lo standard migliore unisce icona, colore e testo: si legge subito, senza interpretazioni."},
+  {t:"Fase 4 · Seiketsu — Standardizzare",d:"Due passi per standardizzare. 1) Scegli il formato di etichetta migliore. 2) Applica lo standard a ogni strumento della shadow board: colore per tipo + nome. Così chiunque ritrova e rimette a posto senza pensarci.",l:"Seiketsu = rendere ripetibile da chiunque ciò che hai ottenuto. Lo standard migliore unisce icona, colore e testo: si legge subito, senza interpretazioni. Il codice colore per tipo è un controllo visivo: l'occhio trova prima la categoria, poi il pezzo."},
   {t:"Fase 5 · Shitsuke — Sostenere",d:"Audit! Lo standard prevede tutti gli strumenti, dritti e a colori. Trova le 3 anomalie: un pezzo mancante, uno girato, uno scolorito.",l:"Shitsuke è la disciplina dell'audit che tiene vivo lo standard. È lo stesso meccanismo che negli altri due giochi evita il decadimento (numeri) e fa funzionare il metodo ovunque (attrezzi)."}
  ],
  wbDeb:[["Seiri","Separare","Solo il necessario, nella giusta quantità"],["Seiton","Sistemare","Un posto visibile per ogni cosa (shadow board)"],["Seisō","Splendere","Pulizia-ispezione: i difetti emergono"],["Seiketsu","Standardizzare","Standard ripetibile: icona + colore + testo"],["Shitsuke","Sostenere","L'audit ricorrente mantiene lo standard"]],
  wbChartNote:"Tempo di prelievo dopo ogni fase. Crolla con Seiri (meno cose) e Seiton (un posto per ognuna); con Seiketsu e Shitsuke resta basso e stabile: le ultime due S non aumentano la velocità, la mantengono. È lo stesso messaggio degli altri due giochi, visto dall'altra parte.",
- wbBenchTitle:"Prova di prelievo",wbBenchHint:"Tocca lo strumento richiesto il più in fretta possibile.",
- wbRetrieval:"Tempo per trovare lo strumento richiesto sul banco così com'è ora:",wbApply:"Applica lo standard a ogni contenitore",
- wbLblText:"Solo testo",wbLblCode:"Solo codice",wbLblStd:"Icona + Colore + Testo"
+ wbBenchTitle:"Prova di prelievo",wbBenchHint:"Tocca lo strumento richiesto il più in fretta possibile.",wbStopwatch:"⏱ Cronometro avviato",
+ wbBaseTitle:"Prova di prelievo · banco di partenza",wbBaseLbl:"Partenza (caos)",
+ wbRetrieval:"Tempo per trovare lo strumento richiesto sul banco così com'è ora:",wbApply:"Applica lo standard a ogni strumento (tocca): colore per tipo + nome",
+ wbLblText:"Solo testo",wbLblCode:"Solo codice",wbLblStd:"Icona + Colore + Testo",
+ wbNeededTitle:"Strumenti necessari",wbLegendNote:"Tieni solo questi (un esemplare per tipo). Gli occasionali (🔪 🧲 🔩) vanno messi a lato; tutto il resto è rifiuto.",
+ wbTools:{hammer:"Martello",wrench:"Chiave",driver:"Cacciavite",saw:"Sega",ruler:"Righello",scissors:"Forbici",flashlight:"Torcia",brush:"Pennello"}
 },
 en:{
  appTitle:"5S Serious Games",chooseGame:"Choose a serious game",
@@ -182,20 +188,23 @@ en:{
  tools2:{brush:"Brushes",marker:"Markers",bucket:"Bucket",flashlight:"Flashlight",gloves:"Gloves",square:"Set square",battery:"Batteries"},
  occnote:"✂️ 🔪 🧲 🔩 are only needed from time to time: leave them in the drawer (tapping them counts as an error).",
  occnote2:"🧽 🧴 🧹 are only needed from time to time: leave them in the drawer (tapping them counts as an error).",
- wbGoal:["Remove waste and duplicates","Drag each tool to its outline","Scrub the stains (tap repeatedly)","Choose the label to adopt as the standard","Audit: find the 3 anomalies"],
- wbNeeded:"Needed!",
+ wbGoal:["Remove waste & duplicates · set aside the occasional","Drag each tool to its outline","Scrub the stains (tap repeatedly)","Choose the label to adopt as the standard","Audit: find the 3 anomalies"],
+ wbNeeded:"Needed!",wbAside:"Set aside · occasional use",
  wbPhase:[
-  {t:"Phase 1 · Seiri — Sort",d:"The bench is overrun with items that don't belong and tools in extra copies. Tap to remove waste and duplicates; leave the tools you need.",l:"Seiri = keep only what is needed, in the right quantity. Waste and duplicates are both muda: they take space and slow the search."},
+  {t:"Phase 1 · Seiri — Sort",d:"The bench is overrun with items that don't belong, with tools in extra copies and with tools used only occasionally. Tap to remove waste and duplicates; drag the occasional tools (🔪 🧲 🔩) into the «set aside» area; leave the ones you always need on the bench.",l:"Seiri = keep only what is needed, in the right quantity. Waste and duplicates are both muda: they take space and slow the search. Tools needed only occasionally aren't waste: you keep them, but set aside, off the working bench."},
   {t:"Phase 2 · Seiton — Set in order",d:"Now every tool has its outline on the shadow board. Drag each one to its place.",l:"Seiton = a place for everything, made visible. The outline tells at a glance where each thing goes and what's missing: that's visual management."},
   {t:"Phase 3 · Seisō — Shine",d:"The bench is dirty. Scrub the stains (tap repeatedly). Careful: cleaning may reveal an anomaly to flag.",l:"Seisō isn't just looks: it's cleaning-as-inspection. Cleaning uncovers defects and leaks before they become failures."},
-  {t:"Phase 4 · Seiketsu — Standardize",d:"Choose which label to adopt as the standard for all the bins.",l:"Seiketsu = making what you achieved repeatable by anyone. The best standard combines icon, colour and text: read instantly, no interpretation needed."},
+  {t:"Phase 4 · Seiketsu — Standardize",d:"Two steps to standardize. 1) Choose the best label format. 2) Apply the standard to every tool on the shadow board: colour by type + name. Now anyone can find and return tools without thinking.",l:"Seiketsu = making what you achieved repeatable by anyone. The best standard combines icon, colour and text: read instantly, no interpretation needed. Colour-coding by type is a visual control: the eye finds the category first, then the piece."},
   {t:"Phase 5 · Shitsuke — Sustain",d:"Audit! The standard has every tool present, upright and in colour. Find the 3 anomalies: one missing, one rotated, one faded.",l:"Shitsuke is the discipline of the audit that keeps the standard alive. It's the same mechanism that in the other two games prevents decay (numbers) and makes the method work anywhere (tools)."}
  ],
  wbDeb:[["Seiri","Sort","Only the needed, in the right quantity"],["Seiton","Set in order","A visible place for everything (shadow board)"],["Seisō","Shine","Cleaning-as-inspection: defects surface"],["Seiketsu","Standardize","Repeatable standard: icon + colour + text"],["Shitsuke","Sustain","The recurring audit keeps the standard alive"]],
  wbChartNote:"Retrieval time after each phase. It drops with Seiri (less stuff) and Seiton (a place for each); with Seiketsu and Shitsuke it stays low and stable: the last two S's don't add speed, they keep it. Same message as the other two games, seen from the other side.",
- wbBenchTitle:"Retrieval test",wbBenchHint:"Tap the requested tool as fast as you can.",
- wbRetrieval:"Time to find the requested tool on the bench as it is now:",wbApply:"Apply the standard to each bin",
- wbLblText:"Text only",wbLblCode:"Code only",wbLblStd:"Icon + Colour + Text"
+ wbBenchTitle:"Retrieval test",wbBenchHint:"Tap the requested tool as fast as you can.",wbStopwatch:"⏱ Stopwatch running",
+ wbBaseTitle:"Retrieval test · starting bench",wbBaseLbl:"Start (chaos)",
+ wbRetrieval:"Time to find the requested tool on the bench as it is now:",wbApply:"Apply the standard to each tool (tap): colour by type + name",
+ wbLblText:"Text only",wbLblCode:"Code only",wbLblStd:"Icon + Colour + Text",
+ wbNeededTitle:"Needed tools",wbLegendNote:"Keep only these (one of each). The occasional ones (🔪 🧲 🔩) go to the side; everything else is waste.",
+ wbTools:{hammer:"Hammer",wrench:"Wrench",driver:"Screwdriver",saw:"Saw",ruler:"Ruler",scissors:"Scissors",flashlight:"Flashlight",brush:"Brush"}
 }
 };
 let lang='it';
@@ -438,38 +447,76 @@ let audioCtx=null;
 function wbSound(type){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);const n=audioCtx.currentTime;if(type==='success'){o.type='sine';o.frequency.setValueAtTime(500,n);o.frequency.exponentialRampToValueAtTime(1000,n+0.1);g.gain.setValueAtTime(0.08,n);g.gain.exponentialRampToValueAtTime(0.01,n+0.3);o.start(n);o.stop(n+0.3);}else if(type==='error'){o.type='sawtooth';o.frequency.setValueAtTime(150,n);o.frequency.linearRampToValueAtTime(100,n+0.2);g.gain.setValueAtTime(0.08,n);g.gain.linearRampToValueAtTime(0.01,n+0.2);o.start(n);o.stop(n+0.2);}else{o.type='triangle';o.frequency.setValueAtTime(800,n);g.gain.setValueAtTime(0.04,n);g.gain.exponentialRampToValueAtTime(0.001,n+0.05);o.start(n);o.stop(n+0.05);}}catch(e){}}
 const WTOOLS=[{k:'hammer',e:'🔨'},{k:'wrench',e:'🔧'},{k:'driver',e:'🪛'},{k:'saw',e:'🪚'},{k:'ruler',e:'📏'},{k:'scissors',e:'✂️'},{k:'flashlight',e:'🔦'},{k:'brush',e:'🖌️'}];
 const WTRASH=['🍎','🍌','📱','🎧','☕','🔑'];
+const WOCC=['🔪','🧲','🔩'];
 const WHUE={hammer:0,wrench:205,driver:60,saw:25,ruler:140,scissors:300,flashlight:255,brush:330};
 const WB={i:0,results:[],timer:null,t0:0,mistakes:0,pending:0,stainsLeft:0,defectFound:false,found:0,layout:[],colored:false};
-function wbGrid(i){return {x:(i%4+0.5)/4*100,y:(Math.floor(i/4)===0?28:60)};}
+function wbGrid(i){return {x:36+(i%4)*9.3,y:(Math.floor(i/4)===0?40:58)};}
 function wbInitLayout(){const sp=wbScatter(8);WB.layout=WTOOLS.map((o,i)=>({k:o.k,e:o.e,x:sp[i].x,y:sp[i].y,rot:rnd(-25,25)}));WB.colored=false;}
-function startWorkbench(){WB.i=0;WB.results=[];wbInitLayout();go(showWbIntro,0);}
+function startWorkbench(){WB.i=0;WB.results=[];wbInitLayout();go(wbBaseline);}
 function showWbIntro(i){WB.i=i;const p=t('wbPhase')[i];app.innerHTML=`<div class="card"><h2>${p.t}</h2><p>${p.d}</p><button class="btn" onclick="go(playWb)">${t('start')}</button></div>`;}
-function playWb(){const i=WB.i,p=t('wbPhase')[i];WB.mistakes=0;app.innerHTML=`<div class="card" style="padding:14px 20px"><strong style="color:var(--blue)">${p.t}</strong><div class="topbar"><span class="target" id="wbgoal">${t('wbGoal')[i]}</span></div><div id="wb"><div class="surface" id="surf"></div></div></div>`;const surf=$('#surf');if(i===0)wbSeiri(surf);else if(i===1)wbSeiton(surf);else if(i===2)wbSeiso(surf);else if(i===3)wbSeiketsu(surf);else wbShitsuke(surf);}
+function playWb(){const i=WB.i,p=t('wbPhase')[i];WB.mistakes=0;
+ const need=i===0?`<aside class="check"><h3>${t('wbNeededTitle')}</h3>${WTOOLS.map(o=>`<div class="crow"><span class="cem">${o.e}</span><span>${t('wbTools')[o.k]}</span></div>`).join('')}<div class="occnote">${t('wbLegendNote')}</div></aside>`:'';
+ const area=i===0?`<div class="playwrap" style="margin-top:10px"><div class="field" id="wb"><div class="surface" id="surf"></div></div>${need}</div>`:`<div id="wb"><div class="surface" id="surf"></div></div>`;
+ app.innerHTML=`<div class="card" style="padding:14px 20px"><strong style="color:var(--blue)">${p.t}</strong><div class="topbar"><span class="target" id="wbgoal">${t('wbGoal')[i]}</span></div>${area}</div>`;
+ const surf=$('#surf');if(i===0)wbSeiri(surf);else if(i===1)wbSeiton(surf);else if(i===2)wbSeiso(surf);else if(i===3)wbSeiketsu(surf);else wbShitsuke(surf);}
 function wbAfterPhase(){go(showWbBench);}
+function wbBenchShell(targetEmoji,title){
+ app.innerHTML=`<div class="card" style="padding:14px 20px"><strong style="color:var(--blue)">${title}</strong>
+ <div class="playwrap" style="margin-top:10px"><div class="field" id="wb"><div class="surface" id="bsurf"></div></div>
+  <aside class="check"><h3>${t('find')}</h3><div style="font-size:52px;text-align:center;line-height:1;margin:4px 0">${targetEmoji}</div><div style="font-size:12px;color:#5d6a7a;text-align:center">${t('wbStopwatch')}</div><div class="bigscore" style="text-align:center;margin:2px 0"><span id="wbbt">0.0</span> <span style="font-size:18px;color:#5d6a7a">${t('secs')}</span></div><p class="muted" style="margin-top:4px">${t('wbBenchHint')}</p></aside></div></div>`;
+ return $('#bsurf');
+}
+function wbStartTimer(){WB.t0=Date.now();WB.timer=setInterval(()=>{const e=$('#wbbt');if(e)e.textContent=((Date.now()-WB.t0)/1000).toFixed(1);},100);}
+function wbHit(next){clearInterval(WB.timer);WB.timer=null;wbSound('success');WB.results.push({bench:(Date.now()-WB.t0)/1000,mistakes:WB.mistakes});next();}
+function wbBaseline(){
+ WB.mistakes=0;const target=WB.layout[Math.floor(Math.random()*8)];
+ const surf=wbBenchShell(target.e,t('wbBaseTitle'));
+ const place=(emoji,x,y,rot,hit)=>{const s=wbObj(surf,emoji,x,y,{rot,size:30});if(hit)s.style.zIndex='5';s.onclick=()=>{if(hit)wbHit(()=>go(showWbIntro,0));else{wbSound('error');WB.mistakes++;s.style.filter='drop-shadow(0 0 8px red)';setTimeout(()=>s.style.filter='',300);}};};
+ WB.layout.forEach(o=>place(o.e,o.x,o.y,o.rot,o.k===target.k));
+ const mess=[];for(let n=0;n<6;n++){const o=WTOOLS[Math.floor(Math.random()*WTOOLS.length)];mess.push({e:o.e,hit:o.k===target.k});}
+ WTRASH.forEach(e=>mess.push({e,hit:false}));WOCC.forEach(e=>mess.push({e,hit:false}));
+ const sp=wbScatter(mess.length);mess.forEach((m,i)=>place(m.e,sp[i].x,sp[i].y,rnd(-25,25),m.hit));
+ [{x:26,y:30},{x:72,y:28},{x:33,y:70},{x:68,y:68}].forEach(p=>{const st=document.createElement('div');st.className='stain';st.style.cssText+=`left:${p.x}%;top:${p.y}%;width:72px;height:72px;pointer-events:none`;surf.appendChild(st);});
+ wbStartTimer();
+}
 function showWbBench(){
  const target=WB.layout[Math.floor(Math.random()*8)];
- app.innerHTML=`<div class="card" style="padding:14px 20px"><strong style="color:var(--blue)">${t('wbBenchTitle')}</strong><div class="topbar"><span class="target">${t('find')} <span style="font-size:26px">${target.e}</span></span><span class="tsec" id="wbbt">0.0</span></div><div id="wb"><div class="surface" id="bsurf"></div></div><p class="muted" style="margin-top:8px">${t('wbBenchHint')}</p></div>`;
- const surf=$('#bsurf');
+ const surf=wbBenchShell(target.e,t('wbBenchTitle'));
  WB.layout.forEach(o=>{const s=wbObj(surf,o.e,o.x,o.y,{rot:o.rot,size:30,hue:WB.colored?WHUE[o.k]:null});s.onclick=()=>{
-   if(o.k===target.k){clearInterval(WB.timer);WB.timer=null;wbSound('success');WB.results.push({bench:(Date.now()-WB.t0)/1000,mistakes:WB.mistakes});go(showWbResult);}
+   if(o.k===target.k)wbHit(()=>go(showWbResult));
    else{wbSound('error');WB.mistakes++;const base=WB.colored?`hue-rotate(${WHUE[o.k]}deg) saturate(1.4) `:'';s.style.filter=base+'drop-shadow(0 0 8px red)';setTimeout(()=>s.style.filter=base.trim(),300);}};});
- WB.t0=Date.now();WB.timer=setInterval(()=>{const e=$('#wbbt');if(e)e.textContent=((Date.now()-WB.t0)/1000).toFixed(1);},100);
+ wbStartTimer();
 }
 function showWbResult(){const i=WB.i,p=t('wbPhase')[i],r=WB.results[WB.results.length-1],last=i===4;app.innerHTML=`<div class="card"><h2>${p.t}</h2><p class="muted">${t('wbRetrieval')}</p><div class="bigscore">${r.bench.toFixed(1)} <span style="font-size:18px;color:#5d6a7a">${t('secs')}</span></div><div class="lesson">${p.l}</div><p style="margin-top:16px"><button class="btn" onclick="${last?'go(showWbFinal)':'go(showWbIntro,'+(i+1)+')'}">${t('cont')}</button></p></div>`;}
-function showWbFinal(){const maxT=Math.max.apply(null,WB.results.map(r=>r.bench)),names=t('wbDeb');const rows=WB.results.map((r,i)=>`<div class="row"><div class="lbl">${i+1}. ${names[i][0]}</div><div class="track"><div class="fill" style="width:${Math.max(9,r.bench/maxT*100)}%">${r.bench.toFixed(1)}${t('secs')}</div></div></div>`).join('');const deb=names.map(d=>`<tr><td>${d[0]}</td><td>${d[1]}</td><td>${d[2]}</td></tr>`).join('');app.innerHTML=`<div class="card"><h2>${t('results')} — ${t('benchGame')}</h2><div class="bars">${rows}</div><p class="muted">${t('shorterBetter')} ${t('wbChartNote')}</p></div><div class="card"><h2>${t('debrief')}</h2><table class="deb"><tr><th>5S</th><th></th><th></th></tr>${deb}</table><p style="margin-top:14px"><button class="btn" onclick="go(startWorkbench)">${t('playAgain')}</button> <button class="btn sec" onclick="go(showHome)">${t('menu')}</button></p></div>`;}
+function showWbFinal(){const maxT=Math.max.apply(null,WB.results.map(r=>r.bench)),names=t('wbDeb'),clabels=[t('wbBaseLbl')].concat(names.map(d=>d[0]));const rows=WB.results.map((r,i)=>`<div class="row"><div class="lbl">${clabels[i]||''}</div><div class="track"><div class="fill" style="width:${Math.max(9,r.bench/maxT*100)}%">${r.bench.toFixed(1)}${t('secs')}</div></div></div>`).join('');const deb=names.map(d=>`<tr><td>${d[0]}</td><td>${d[1]}</td><td>${d[2]}</td></tr>`).join('');app.innerHTML=`<div class="card"><h2>${t('results')} — ${t('benchGame')}</h2><div class="bars">${rows}</div><p class="muted">${t('shorterBetter')} ${t('wbChartNote')}</p></div><div class="card"><h2>${t('debrief')}</h2><table class="deb"><tr><th>5S</th><th></th><th></th></tr>${deb}</table><p style="margin-top:14px"><button class="btn" onclick="go(startWorkbench)">${t('playAgain')}</button> <button class="btn sec" onclick="go(showHome)">${t('menu')}</button></p></div>`;}
 function wbObj(surf,emoji,x,y,opts){opts=opts||{};const s=document.createElement('span');s.className='obj';s.textContent=emoji;s.style.left=x+'%';s.style.top=y+'%';let tr='translate(-50%,-50%)';if(opts.rot)tr+=` rotate(${opts.rot}deg)`;s.style.transform=tr;let f='';if(opts.gray)f='grayscale(1) opacity(.55)';else if(opts.hue!=null)f=`hue-rotate(${opts.hue}deg) saturate(1.4)`;if(f)s.style.filter=f;if(opts.size)s.style.fontSize=opts.size+'px';surf.appendChild(s);return s;}
 function wbScatter(n){const cols=Math.ceil(Math.sqrt(n*1.7)),rows=Math.ceil(n/cols),cells=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)cells.push([c,r]);shuffle(cells);const out=[];for(let k=0;k<n;k++){const c=cells[k][0],r=cells[k][1];out.push({x:cl((c+0.5+rnd(-0.25,0.25))/cols*100,8,92),y:cl((r+0.5+rnd(-0.25,0.25))/rows*100,12,88)});}return out;}
 function wbSeiri(surf){
+ const zone=document.createElement('div');zone.className='aside';zone.innerHTML=`<span class="asidelbl">${t('wbAside')}</span>`;surf.appendChild(zone);
  const toolItems=WTOOLS.map(o=>o.k);for(let n=0;n<6;n++)toolItems.push(WTOOLS[Math.floor(Math.random()*WTOOLS.length)].k);
- const all=shuffle(toolItems.map(k=>({k,kind:'tool'})).concat(WTRASH.map(e=>({e,kind:'trash'}))));const spots=wbScatter(all.length);
- let trashLeft=WTRASH.length,dupLeft=6;const upd=()=>{const g=$('#wbgoal');if(g)g.textContent=`${t('wbGoal')[0]} — ${trashLeft+dupLeft}`;};
- all.forEach((it,idx)=>{const p=spots[idx],emoji=it.kind==='trash'?it.e:WTOOLS.find(o=>o.k===it.k).e;const s=wbObj(surf,emoji,p.x,p.y,{rot:rnd(-25,25)});s.dataset.kind=it.kind;if(it.kind==='tool')s.dataset.tool=it.k;
+ const all=shuffle(toolItems.map(k=>({k,kind:'tool'})).concat(WTRASH.map(e=>({e,kind:'trash'}))).concat(WOCC.map(e=>({e,kind:'occ'}))));const spots=wbScatter(all.length);
+ let trashLeft=WTRASH.length,dupLeft=6,occLeft=WOCC.length,asideN=0;
+ const upd=()=>{const g=$('#wbgoal');if(g)g.textContent=`${t('wbGoal')[0]} — ${trashLeft+dupLeft+occLeft}`;};
+ const checkDone=()=>{if(trashLeft<=0&&dupLeft<=0&&occLeft<=0)setTimeout(wbAfterPhase,300);};
+ all.forEach((it,idx)=>{const p=spots[idx],y=cl(10+(p.y-12)/76*54,10,64),emoji=it.kind==='tool'?WTOOLS.find(o=>o.k===it.k).e:it.e;const s=wbObj(surf,emoji,p.x,y,{rot:rnd(-25,25)});s.dataset.kind=it.kind;if(it.kind==='tool')s.dataset.tool=it.k;
+  if(it.kind==='occ'){wbDragToAside(s,surf,zone,el=>{el.style.left=((asideN+0.5)/WOCC.length*86+7)+'%';el.style.top='86%';el.style.transform='translate(-50%,-50%) scale(.82)';asideN++;occLeft--;upd();checkDone();});return;}
   s.onclick=()=>{if(s.dataset.gone)return;
-   if(s.dataset.kind==='trash'){wbSound('success');s.dataset.gone=1;s.classList.add('gone');setTimeout(()=>s.remove(),200);trashLeft--;upd();if(trashLeft<=0&&dupLeft<=0)setTimeout(wbAfterPhase,300);return;}
+   if(s.dataset.kind==='trash'){wbSound('success');s.dataset.gone=1;s.classList.add('gone');setTimeout(()=>s.remove(),200);trashLeft--;upd();checkDone();return;}
    const rem=Array.prototype.slice.call(surf.querySelectorAll('.obj')).filter(o=>o.dataset.tool===s.dataset.tool&&!o.dataset.gone);
-   if(rem.length>1){wbSound('success');s.dataset.gone=1;s.classList.add('gone');setTimeout(()=>s.remove(),200);dupLeft--;upd();if(trashLeft<=0&&dupLeft<=0)setTimeout(wbAfterPhase,300);}
+   if(rem.length>1){wbSound('success');s.dataset.gone=1;s.classList.add('gone');setTimeout(()=>s.remove(),200);dupLeft--;upd();checkDone();}
    else{wbSound('error');WB.mistakes++;s.style.filter='drop-shadow(0 0 8px red)';setTimeout(()=>s.style.filter='',400);}};});
  upd();
+}
+function wbDragToAside(el,surf,zone,onDone){
+ el.style.cursor='grab';
+ const down=ev=>{ev.preventDefault();wbSound('click');
+  const move=e=>{const pt=e.touches?e.touches[0]:e,rect=surf.getBoundingClientRect();el.style.left=cl((pt.clientX-rect.left)/rect.width*100,3,97)+'%';el.style.top=cl((pt.clientY-rect.top)/rect.height*100,3,97)+'%';};
+  const up=()=>{document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up);
+   const a=el.getBoundingClientRect(),z=zone.getBoundingClientRect(),cx=a.left+a.width/2,cy=a.top+a.height/2;
+   if(cx>=z.left&&cx<=z.right&&cy>=z.top&&cy<=z.bottom){el.onmousedown=null;el.ontouchstart=null;el.style.cursor='default';el.dataset.gone=1;wbSound('success');onDone(el);}
+   else{wbSound('error');WB.mistakes++;}};
+  document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);document.addEventListener('touchmove',move,{passive:false});document.addEventListener('touchend',up);};
+ el.onmousedown=down;el.ontouchstart=down;
 }
 function wbSeiton(surf){
  WTOOLS.forEach((o,i)=>{const g=wbGrid(i);const sl=document.createElement('span');sl.className='slot';sl.textContent=o.e;sl.dataset.tool=o.k;sl.style.left=g.x+'%';sl.style.top=g.y+'%';sl.style.transform='translate(-50%,-50%)';surf.appendChild(sl);});
@@ -506,10 +553,15 @@ function wbSeiketsu(surf){
 }
 function wbSeiketsuApply(surf){
  const g=$('#wbgoal');if(g)g.textContent=t('wbApply');
- surf.innerHTML='';let left=4;
- for(let n=0;n<4;n++){const bin=document.createElement('div');bin.style.cssText='width:120px;height:90px;border:2px dashed #94a3b8;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;font-size:22px;color:#94a3b8';bin.textContent='?';
-  bin.onclick=()=>{if(bin.dataset.d)return;bin.dataset.d=1;wbSound('click');bin.style.borderStyle='solid';bin.style.borderColor='var(--blue)';bin.style.background='#eef3fb';bin.innerHTML='<span style="background:#1b4fa0;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px">🔨🔧 STD</span>';left--;if(left<=0){WB.colored=true;wbSound('success');setTimeout(wbAfterPhase,500);}};
-  surf.appendChild(bin);}
+ surf.style.cssText='';surf.innerHTML='';let left=WTOOLS.length;
+ WTOOLS.forEach((o,i)=>{const gp=wbGrid(i);
+  const slot=document.createElement('span');slot.className='slot';slot.textContent=o.e;slot.style.left=gp.x+'%';slot.style.top=gp.y+'%';slot.style.transform='translate(-50%,-50%)';surf.appendChild(slot);
+  const s=wbObj(surf,o.e,gp.x,gp.y,{size:30,gray:true});s.style.cursor='pointer';
+  const tag=document.createElement('span');tag.className='stdtag';tag.style.left=gp.x+'%';tag.style.top=(gp.y+13)+'%';tag.textContent='?';surf.appendChild(tag);
+  s.onclick=()=>{if(s.dataset.d)return;s.dataset.d=1;wbSound('click');
+   s.style.filter=`hue-rotate(${WHUE[o.k]}deg) saturate(1.4)`;
+   tag.style.background=`hsl(${WHUE[o.k]},55%,45%)`;tag.style.color='#fff';tag.textContent=(t('wbTools')[o.k]||o.k);
+   left--;if(left<=0){WB.colored=true;wbSound('success');setTimeout(wbAfterPhase,600);}};});
 }
 function wbShitsuke(surf){
  const an=shuffle([0,1,2,3,4,5,6,7]).slice(0,3),missing=an[0],rotated=an[1],gray=an[2];WB.found=0;
